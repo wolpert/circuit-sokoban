@@ -12,35 +12,54 @@ import java.nio.ByteBuffer;
  * libGDX entry point. Owns the active screen. Platform launchers (desktop /
  * android) just construct this.
  *
- * <p>Supports an optional screenshot mode: render a few frames, write a PNG,
- * then exit. Used for headless visual verification during development.
+ * <p>Supports a screenshot mode (render N frames, optionally fire a debug
+ * animation trigger, write a PNG, then exit) for headless visual verification.
  */
 public final class CircuitSokobanGame extends Game {
 
     private final long seed;
     private final GenParams params;
     private final String screenshotPath; // null == normal interactive run
+    private final float shotDelay;        // seconds after the debug trigger to capture
+    private final GameScreen.Debug debug;
+
+    private GameScreen screen;
     private int frame;
+    private float elapsed;
+    private boolean debugFired;
+    private float debugAt;
 
     public CircuitSokobanGame() {
-        this(1L, GenParams.medium(), null);
+        this(1L, GenParams.medium(), null, 0.1f, GameScreen.Debug.NONE);
     }
 
-    public CircuitSokobanGame(long seed, GenParams params, String screenshotPath) {
+    public CircuitSokobanGame(long seed, GenParams params, String screenshotPath,
+                              float shotDelay, GameScreen.Debug debug) {
         this.seed = seed;
         this.params = params;
         this.screenshotPath = screenshotPath;
+        this.shotDelay = shotDelay;
+        this.debug = debug;
     }
 
     @Override
     public void create() {
-        setScreen(new GameScreen(seed, params));
+        screen = new GameScreen(seed, params, debug);
+        setScreen(screen);
     }
 
     @Override
     public void render() {
         super.render();
-        if (screenshotPath != null && ++frame == 3) {
+        elapsed += Gdx.graphics.getDeltaTime();
+        frame++;
+        // Fire the debug trigger once, after one clean frame, and time the capture from there.
+        if (!debugFired && frame >= 2) {
+            screen.applyDebug(); // no-op unless a debug trigger was requested
+            debugFired = true;
+            debugAt = elapsed;
+        }
+        if (screenshotPath != null && debugFired && elapsed - debugAt >= shotDelay) {
             saveScreenshot(screenshotPath);
             Gdx.app.exit();
         }

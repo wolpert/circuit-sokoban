@@ -4,7 +4,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.circuitsokoban.game.PlaySession;
+import com.circuitsokoban.game.PlayController;
 import com.circuitsokoban.model.Board;
 import com.circuitsokoban.model.Direction;
 import com.circuitsokoban.model.Pos;
@@ -30,7 +30,7 @@ public final class GameInput extends InputAdapter {
 
     private static final float SWIPE_MIN_PX = 24f;
 
-    private final PlaySession session;
+    private final PlayController controller;
     private final Viewport viewport;
     private final IsoProjector iso;
 
@@ -39,8 +39,8 @@ public final class GameInput extends InputAdapter {
     private float downY;
     private Direction lastDir = Direction.EAST;
 
-    public GameInput(PlaySession session, Viewport viewport, IsoProjector iso) {
-        this.session = session;
+    public GameInput(PlayController controller, Viewport viewport, IsoProjector iso) {
+        this.controller = controller;
         this.viewport = viewport;
         this.iso = iso;
     }
@@ -53,8 +53,8 @@ public final class GameInput extends InputAdapter {
             case Input.Keys.LEFT, Input.Keys.A -> move(Direction.WEST);
             case Input.Keys.DOWN, Input.Keys.S -> move(Direction.NORTH);
             case Input.Keys.R, Input.Keys.E -> rotateFacing();
-            case Input.Keys.Z -> session.undo();
-            case Input.Keys.Y -> session.redo();
+            case Input.Keys.Z -> controller.undo();
+            case Input.Keys.Y -> controller.redo();
             default -> { return false; }
         }
         return true;
@@ -82,7 +82,7 @@ public final class GameInput extends InputAdapter {
     private void handleTap(int screenX, int screenY) {
         viewport.unproject(tmp.set(screenX, screenY));
         Pos cell = iso.unproject(tmp.x, tmp.y);
-        Board board = session.board();
+        Board board = controller.board();
         if (!board.inBounds(cell)) {
             return;
         }
@@ -91,31 +91,31 @@ public final class GameInput extends InputAdapter {
             return; // not adjacent to the avatar; ignore
         }
         if (board.pieceAt(cell) != null) {
-            session.rotate(cell);
+            controller.rotate(cell);
         } else {
             move(toCell);
         }
     }
 
     private void move(Direction d) {
-        if (session.step(d)) {
+        if (controller.step(d).isLegal()) {
             lastDir = d;
         }
     }
 
     /** Rotate the piece the avatar faces; failing that, any adjacent piece. */
     private void rotateFacing() {
-        Board board = session.board();
+        Board board = controller.board();
         Pos player = board.player();
         Pos facing = player.step(lastDir);
         if (board.pieceAt(facing) != null) {
-            session.rotate(facing);
+            controller.rotate(facing);
             return;
         }
         for (Direction d : Direction.values()) {
             Pos p = player.step(d);
             if (board.pieceAt(p) != null) {
-                session.rotate(p);
+                controller.rotate(p);
                 return;
             }
         }

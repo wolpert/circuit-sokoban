@@ -28,7 +28,7 @@ class PlaySessionTest {
     void pushCountsAsMoveAndSolves() {
         PlaySession s = new PlaySession(onePushLevel());
         assertFalse(s.isSolved());
-        assertTrue(s.step(Direction.SOUTH));
+        assertTrue(s.step(Direction.SOUTH).isLegal());
         assertTrue(s.isSolved());
         assertEquals(1, s.moves());
     }
@@ -36,7 +36,7 @@ class PlaySessionTest {
     @Test
     void walkingIsFree() {
         PlaySession s = new PlaySession(onePushLevel());
-        assertTrue(s.step(Direction.EAST)); // (1,2) -> (2,2), empty walk
+        assertTrue(s.step(Direction.EAST).isLegal()); // (1,2) -> (2,2), empty walk
         assertEquals(0, s.moves());
         assertFalse(s.isSolved());
     }
@@ -44,7 +44,7 @@ class PlaySessionTest {
     @Test
     void illegalMoveIsRejectedAndChangesNothing() {
         PlaySession s = new PlaySession(onePushLevel());
-        assertFalse(s.step(Direction.NORTH)); // walking off the top edge from (1,2)
+        assertFalse(s.step(Direction.NORTH).isLegal()); // walking off the top edge from (1,2)
         assertEquals(0, s.moves());
         assertFalse(s.canUndo());
     }
@@ -83,7 +83,7 @@ class PlaySessionTest {
     void rotateCountsAsMove() {
         PlaySession s = new PlaySession(onePushLevel());
         // Player at (1,2) is adjacent to the piece at (1,1): rotate is legal.
-        assertTrue(s.rotate(new Pos(1, 1)));
+        assertTrue(s.rotate(new Pos(1, 1)).isLegal());
         assertEquals(1, s.moves());
     }
 }

@@ -3,37 +3,39 @@ package com.circuitsokoban.render;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.circuitsokoban.model.Board;
-import com.circuitsokoban.model.Circuit;
 import com.circuitsokoban.model.Direction;
 import com.circuitsokoban.model.Piece;
 import com.circuitsokoban.model.Pos;
 import com.circuitsokoban.model.Terminal;
 
 /**
- * Draws a {@link Board} isometrically with flat procedural shapes (no texture
- * assets). Static rendering only for now &mdash; movement/energize animation is
- * the later juice layer; here everything snaps to its grid cell.
+ * Draws a {@link Board} isometrically with flat procedural shapes, reading all
+ * animation state from a {@link BoardView} (offsets, smooth rotation, energize
+ * sweep, idle pulse, player position, particles).
  *
  * <p>The caller owns the {@link ShapeRenderer} and must have set its projection
- * matrix to the camera before calling {@link #render}. This method runs its own
- * begin/end batches.
+ * matrix; this class runs its own begin/end batches.
  */
 public final class BoardRenderer {
 
     private final IsoProjector iso;
-    private final Vector2 b = new Vector2();
+    private final Vector2 off = new Vector2();
+    private final Vector2 end = new Vector2();
+    private final Color wire = new Color();
 
     public BoardRenderer(IsoProjector iso) {
         this.iso = iso;
     }
 
-    public void render(ShapeRenderer sr, Board board, Circuit.Result circuit) {
+    public void render(ShapeRenderer sr, Board board, BoardView view) {
         drawTileFills(sr, board);
         drawTileBorders(sr, board);
-        drawConnectors(sr, board, circuit);
-        drawPlayer(sr, board);
+        drawConnectors(sr, board, view);
+        drawPlayer(sr, view);
+        drawParticles(sr, view);
     }
 
     private void drawTileFills(ShapeRenderer sr, Board board) {
@@ -41,10 +43,7 @@ public final class BoardRenderer {
         for (int y = 0; y < board.height(); y++) {
             for (int x = 0; x < board.width(); x++) {
                 Pos p = new Pos(x, y);
-                Color c = Palette.TILE_LIGHT;
-                if ((x + y) % 2 == 0) {
-                    c = Palette.TILE_DARK;
-                }
+                Color c = (x + y) % 2 == 0 ? Palette.TILE_DARK : Palette.TILE_LIGHT;
                 if (board.source().pos().equals(p)) {
                     c = Palette.SOURCE;
                 } else if (board.receiver().pos().equals(p)) {
@@ -65,21 +64,20 @@ public final class BoardRenderer {
             for (int x = 0; x < board.width(); x++) {
                 float cx = iso.worldX(x, y);
                 float cy = iso.worldY(x, y);
-                sr.line(cx, cy + hh, cx + hw, cy); // top -> right
-                sr.line(cx + hw, cy, cx, cy - hh);  // right -> bottom
-                sr.line(cx, cy - hh, cx - hw, cy);  // bottom -> left
-                sr.line(cx - hw, cy, cx, cy + hh);  // left -> top
+                sr.line(cx, cy + hh, cx + hw, cy);
+                sr.line(cx + hw, cy, cx, cy - hh);
+                sr.line(cx, cy - hh, cx - hw, cy);
+                sr.line(cx - hw, cy, cx, cy + hh);
             }
         }
         sr.end();
     }
 
-    private void drawConnectors(ShapeRenderer sr, Board board, Circuit.Result circuit) {
+    private void drawConnectors(ShapeRenderer sr, Board board, BoardView view) {
         float armWidth = iso.halfH() * 0.34f;
         float jointR = iso.halfH() * 0.42f;
 
         sr.begin(ShapeType.Filled);
-        // Terminal stubs: a short arm from each terminal toward its opening.
         drawTerminalStub(sr, board.source(), Palette.SOURCE, armWidth, jointR);
         drawTerminalStub(sr, board.receiver(), Palette.RECEIVER, armWidth, jointR);
 
@@ -90,15 +88,35 @@ public final class BoardRenderer {
                 if (piece == null) {
                     continue;
                 }
-                Color wire = circuit.energized().contains(p)
-                        ? Palette.WIRE_ENERGIZED : Palette.WIRE_IDLE;
+                view.offsetFor(p, off);
+                float cx = iso.worldX(x, y) + off.x;
+                float cy = iso.worldY(x, y) + off.y;
+
+                if (view.isLit(p)) {
+                    float f = view.pulse();
+                    wire.set(Palette.WIRE_ENERGIZED.r * f, Palette.WIRE_ENERGIZED.g * f,
+                            Palette.WIRE_ENERGIZED.b * f, 1f);
+                } else {
+                    wire.set(Palette.WIRE_IDLE);
+                }
                 sr.setColor(wire);
-                float cx = iso.worldX(x, y);
-                float cy = iso.worldY(x, y);
+
+                float rot = view.rotationProgress(p);
                 for (Direction d : Direction.values()) {
-                    if (piece.hasOpening(d)) {
-                        halfwayToNeighbor(x, y, d, b);
-                        sr.rectLine(cx, cy, b.x, b.y, armWidth);
+                    if (!piece.hasOpening(d)) {
+                        continue;
+                    }
+                    if (rot >= 0f) {
+                        // Sweep each arm from where it was (one step CCW) to its new direction.
+                        armEndpoint(p, d.rotateCCW(), end);
+                        float ex = end.x;
+                        float ey = end.y;
+                        armEndpoint(p, d, end);
+                        sr.rectLine(cx, cy, MathUtils.lerp(ex, end.x, rot),
+                                MathUtils.lerp(ey, end.y, rot), armWidth);
+                    } else {
+                        armEndpoint(p, d, end);
+                        sr.rectLine(cx, cy, end.x + off.x, end.y + off.y, armWidth);
                     }
                 }
                 sr.setColor(Palette.JOINT);
@@ -112,27 +130,42 @@ public final class BoardRenderer {
         sr.setColor(color);
         float cx = iso.worldX(t.pos().x(), t.pos().y());
         float cy = iso.worldY(t.pos().x(), t.pos().y());
-        halfwayToNeighbor(t.pos().x(), t.pos().y(), t.opening(), b);
-        sr.rectLine(cx, cy, b.x, b.y, armWidth);
+        armEndpoint(t.pos(), t.opening(), end);
+        sr.rectLine(cx, cy, end.x, end.y, armWidth);
         sr.circle(cx, cy, jointR * 0.9f, 20);
     }
 
-    private void drawPlayer(ShapeRenderer sr, Board board) {
+    private void drawPlayer(ShapeRenderer sr, BoardView view) {
         sr.begin(ShapeType.Filled);
         sr.setColor(Palette.PLAYER);
-        Pos p = board.player();
-        float cx = iso.worldX(p.x(), p.y());
-        float cy = iso.worldY(p.x(), p.y()) + iso.halfH() * 0.4f; // lift a touch so it "stands"
-        sr.circle(cx, cy, iso.halfH() * 0.55f, 24);
+        view.playerWorld(off);
+        sr.circle(off.x, off.y + iso.halfH() * 0.4f, iso.halfH() * 0.55f, 24);
         sr.end();
     }
 
-    /** Point halfway between cell (x,y)'s centre and its neighbour in direction d. */
-    private void halfwayToNeighbor(int x, int y, Direction d, Vector2 out) {
-        float cx = iso.worldX(x, y);
-        float cy = iso.worldY(x, y);
-        float nx = iso.worldX(x + d.dx, y + d.dy);
-        float ny = iso.worldY(x + d.dx, y + d.dy);
+    private void drawParticles(ShapeRenderer sr, BoardView view) {
+        if (view.particles().isEmpty()) {
+            return;
+        }
+        sr.begin(ShapeType.Filled);
+        for (Particle pt : view.particles()) {
+            Color c = pt.color;
+            sr.setColor(c.r, c.g, c.b, pt.alpha());
+            if (pt.triangle) {
+                triangle(sr, pt.x, pt.y, pt.size, pt.angle);
+            } else {
+                square(sr, pt.x, pt.y, pt.size, pt.angle);
+            }
+        }
+        sr.end();
+    }
+
+    /** Midpoint between cell {@code p}'s centre and its neighbour in direction {@code d}. */
+    private void armEndpoint(Pos p, Direction d, Vector2 out) {
+        float cx = iso.worldX(p.x(), p.y());
+        float cy = iso.worldY(p.x(), p.y());
+        float nx = iso.worldX(p.x() + d.dx, p.y() + d.dy);
+        float ny = iso.worldY(p.x() + d.dx, p.y() + d.dy);
         out.set((cx + nx) / 2f, (cy + ny) / 2f);
     }
 
@@ -140,8 +173,28 @@ public final class BoardRenderer {
         float hw = iso.halfW();
         float hh = iso.halfH();
         sr.setColor(c);
-        // top, right, bottom, left
         sr.triangle(cx, cy + hh, cx + hw, cy, cx, cy - hh);
         sr.triangle(cx, cy + hh, cx, cy - hh, cx - hw, cy);
+    }
+
+    private void square(ShapeRenderer sr, float x, float y, float s, float angleDeg) {
+        float h = s / 2f;
+        float c = MathUtils.cosDeg(angleDeg);
+        float sn = MathUtils.sinDeg(angleDeg);
+        float x1 = -h * c - h * sn;
+        float y1 = -h * sn + h * c;
+        float x2 = h * c - h * sn;
+        float y2 = h * sn + h * c;
+        sr.triangle(x + x1, y + y1, x + x2, y + y2, x - x1, y - y1);
+        sr.triangle(x + x2, y + y2, x - x1, y - y1, x - x2, y - y2);
+    }
+
+    private void triangle(ShapeRenderer sr, float x, float y, float s, float angleDeg) {
+        float r = s * 0.6f;
+        float a0 = angleDeg * MathUtils.degreesToRadians;
+        sr.triangle(
+                x + r * MathUtils.cos(a0), y + r * MathUtils.sin(a0),
+                x + r * MathUtils.cos(a0 + MathUtils.PI2 / 3f), y + r * MathUtils.sin(a0 + MathUtils.PI2 / 3f),
+                x + r * MathUtils.cos(a0 + 2f * MathUtils.PI2 / 3f), y + r * MathUtils.sin(a0 + 2f * MathUtils.PI2 / 3f));
     }
 }

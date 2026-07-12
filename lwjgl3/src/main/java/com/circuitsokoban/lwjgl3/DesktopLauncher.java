@@ -3,6 +3,7 @@ package com.circuitsokoban.lwjgl3;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.circuitsokoban.CircuitSokobanGame;
+import com.circuitsokoban.screen.GameScreen;
 import com.circuitsokoban.solver.GenParams;
 
 /**
@@ -25,12 +26,16 @@ public final class DesktopLauncher {
         long seed = 1L;
         GenParams params = GenParams.medium();
         String screenshot = null;
+        float shotDelay = 0.1f;
+        GameScreen.Debug debug = GameScreen.Debug.NONE;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--seed" -> seed = Long.parseLong(args[++i]);
                 case "--difficulty" -> params = difficulty(args[++i]);
                 case "--screenshot" -> screenshot = args[++i];
+                case "--shotdelay" -> shotDelay = Float.parseFloat(args[++i]);
+                case "--debug" -> debug = debug(args[++i]);
                 default -> throw new IllegalArgumentException("Unknown arg: " + args[i]);
             }
         }
@@ -42,7 +47,16 @@ public final class DesktopLauncher {
         config.useVsync(true);
         config.setForegroundFPS(60);
 
-        new Lwjgl3Application(new CircuitSokobanGame(seed, params, screenshot), config);
+        new Lwjgl3Application(new CircuitSokobanGame(seed, params, screenshot, shotDelay, debug), config);
+    }
+
+    private static GameScreen.Debug debug(String name) {
+        return switch (name.toLowerCase()) {
+            case "kick-rotate" -> GameScreen.Debug.KICK_ROTATE;
+            case "kick-push" -> GameScreen.Debug.KICK_PUSH;
+            case "solved" -> GameScreen.Debug.SOLVED_WAVE;
+            default -> throw new IllegalArgumentException("Unknown debug: " + name);
+        };
     }
 
     private static GenParams difficulty(String name) {

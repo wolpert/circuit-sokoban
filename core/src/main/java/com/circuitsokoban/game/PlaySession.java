@@ -40,17 +40,19 @@ public final class PlaySession {
         recompute();
     }
 
-    public boolean step(Direction d) {
+    /** Applies a player step (walk or push). Returns the result (illegal if blocked). */
+    public MoveResult step(Direction d) {
         return apply(board.stepPlayer(d));
     }
 
-    public boolean rotate(Pos target) {
+    /** Rotates the piece at {@code target} if legal. Returns the result. */
+    public MoveResult rotate(Pos target) {
         return apply(board.rotateAt(target));
     }
 
-    private boolean apply(MoveResult result) {
+    private MoveResult apply(MoveResult result) {
         if (!result.isLegal()) {
-            return false;
+            return result;
         }
         undoStack.push(new Snapshot(board, moves));
         redoStack.clear();
@@ -59,7 +61,7 @@ public final class PlaySession {
             moves++;
         }
         recompute();
-        return true;
+        return result;
     }
 
     public boolean undo() {

@@ -29,8 +29,13 @@ public final class IsoProjector {
 
     /** Centres a {@code cols x rows} board inside a {@code worldW x worldH} viewport. */
     public void centerBoard(int cols, int rows, float worldW, float worldH) {
-        originX = worldW / 2f;
-        originY = worldH / 2f + ((cols - 1 + rows - 1) / 2f) * halfH;
+        setBoardCenter(cols, rows, worldW / 2f, worldH / 2f);
+    }
+
+    /** Places the visual centre of a {@code cols x rows} board at ({@code centerX}, {@code centerY}). */
+    public void setBoardCenter(int cols, int rows, float centerX, float centerY) {
+        originX = centerX;
+        originY = centerY + ((cols - 1 + rows - 1) / 2f) * halfH;
     }
 
     public float worldX(int gx, int gy) {

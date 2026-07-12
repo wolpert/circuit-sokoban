@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.circuitsokoban.game.PlayController;
 import com.circuitsokoban.game.PlaySession;
 import com.circuitsokoban.model.Board;
 import com.circuitsokoban.model.Direction;
@@ -14,6 +15,7 @@ import com.circuitsokoban.model.Piece;
 import com.circuitsokoban.model.PieceType;
 import com.circuitsokoban.model.Pos;
 import com.circuitsokoban.model.Terminal;
+import com.circuitsokoban.render.BoardView;
 import com.circuitsokoban.render.IsoProjector;
 import com.circuitsokoban.solver.Level;
 import org.junit.jupiter.api.Test;
@@ -31,7 +33,8 @@ class GameInputTest {
         FitViewport vp = new FitViewport(540f, 960f, cam);
         IsoProjector iso = new IsoProjector(96f);
         iso.centerBoard(3, 3, 540f, 960f);
-        return new GameInput(session, vp, iso);
+        PlayController controller = new PlayController(session, new BoardView(iso));
+        return new GameInput(controller, vp, iso);
     }
 
     private Level onePushLevel() {
