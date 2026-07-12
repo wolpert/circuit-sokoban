@@ -41,13 +41,26 @@ public final class Solver {
     public record Result(boolean solvable, int moves, List<Board> path) {}
 
     private final int maxStates;
+    private final int maxDepth;
 
     public Solver() {
-        this(DEFAULT_MAX_STATES);
+        this(DEFAULT_MAX_STATES, Integer.MAX_VALUE);
     }
 
     public Solver(int maxStates) {
+        this(maxStates, Integer.MAX_VALUE);
+    }
+
+    /**
+     * @param maxStates state-count safety cap (over budget -&gt; treated as unsolvable)
+     * @param maxDepth  never search deeper than this many scored moves; a level whose
+     *                  optimal solution is deeper is reported unsolvable. During
+     *                  generation this is set to the accept window's {@code maxPar}
+     *                  so rejecting "too hard" scrambles is cheap.
+     */
+    public Solver(int maxStates, int maxDepth) {
         this.maxStates = maxStates;
+        this.maxDepth = maxDepth;
     }
 
     public Result solve(Board start) {
@@ -64,15 +77,21 @@ public final class Solver {
         while (!queue.isEmpty() && expanded < maxStates) {
             Node node = queue.poll();
             expanded++;
+            int childDist = node.dist + 1;
+            if (childDist > maxDepth) {
+                continue; // node is at the depth limit; its children are out of range
+            }
             for (Board succ : successors(node.board)) {
                 if (!visited.add(StateKey.of(succ))) {
                     continue;
                 }
-                Node child = new Node(succ, node.dist + 1, node);
+                Node child = new Node(succ, childDist, node);
                 if (Circuit.isSolved(succ)) {
                     return new Result(true, child.dist, reconstruct(child));
                 }
-                queue.add(child);
+                if (childDist < maxDepth) {
+                    queue.add(child); // states at exactly maxDepth are checked but never expanded
+                }
             }
         }
         return new Result(false, -1, List.of());
