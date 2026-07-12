@@ -1,6 +1,7 @@
 package com.circuitsokoban.render;
 
 import com.badlogic.gdx.math.Vector2;
+import com.circuitsokoban.model.Direction;
 import com.circuitsokoban.model.Pos;
 
 /**
@@ -42,5 +43,35 @@ public final class IsoProjector {
 
     public Vector2 center(Pos p, Vector2 out) {
         return out.set(worldX(p.x(), p.y()), worldY(p.x(), p.y()));
+    }
+
+    /** Inverse projection: the grid cell whose centre is nearest world point (wx, wy). */
+    public Pos unproject(float wx, float wy) {
+        float diff = (wx - originX) / halfW;   // == gx - gy
+        float sum = (originY - wy) / halfH;     // == gx + gy
+        int gx = Math.round((sum + diff) / 2f);
+        int gy = Math.round((sum - diff) / 2f);
+        return new Pos(gx, gy);
+    }
+
+    /**
+     * The grid direction whose on-screen projection best matches a swipe of
+     * ({@code screenDx}, {@code screenDy}) in screen pixels (y grows downward).
+     * Uses the actual projected axes, so it always agrees with what's drawn.
+     */
+    public Direction directionForSwipe(float screenDx, float screenDy) {
+        float worldDy = -screenDy; // screen y is down, world y is up
+        Direction best = Direction.EAST;
+        float bestDot = Float.NEGATIVE_INFINITY;
+        for (Direction d : Direction.values()) {
+            float vx = (d.dx - d.dy) * halfW;
+            float vy = -(d.dx + d.dy) * halfH;
+            float dot = vx * screenDx + vy * worldDy;
+            if (dot > bestDot) {
+                bestDot = dot;
+                best = d;
+            }
+        }
+        return best;
     }
 }

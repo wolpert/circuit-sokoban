@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
 import com.circuitsokoban.screen.GameScreen;
 import com.circuitsokoban.solver.GenParams;
+import java.nio.ByteBuffer;
 
 /**
  * libGDX entry point. Owns the active screen. Platform launchers (desktop /
@@ -49,8 +50,22 @@ public final class CircuitSokobanGame extends Game {
         int w = Gdx.graphics.getBackBufferWidth();
         int h = Gdx.graphics.getBackBufferHeight();
         Pixmap pixmap = Pixmap.createFromFrameBuffer(0, 0, w, h);
+        flipVertically(pixmap, w, h); // framebuffer is bottom-up; PNG is top-down
         PixmapIO.writePNG(Gdx.files.absolute(path), pixmap);
         pixmap.dispose();
         Gdx.app.log("CircuitSokoban", "Wrote screenshot " + path + " (" + w + "x" + h + ")");
+    }
+
+    private static void flipVertically(Pixmap pixmap, int w, int h) {
+        ByteBuffer pixels = pixmap.getPixels();
+        int stride = w * 4; // RGBA8888
+        byte[] flipped = new byte[stride * h];
+        for (int row = 0; row < h; row++) {
+            pixels.position((h - row - 1) * stride);
+            pixels.get(flipped, row * stride, stride);
+        }
+        pixels.clear();
+        pixels.put(flipped);
+        pixels.clear();
     }
 }
