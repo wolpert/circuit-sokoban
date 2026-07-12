@@ -1,0 +1,9 @@
+// Root build. Per-module builds live in core/ and lwjgl3/.
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+        // libGDX snapshots occasionally needed; harmless to leave available:
+        maven { url 'https://oss.sonatype.org/content/repositories/releases/' }
+    }
+}

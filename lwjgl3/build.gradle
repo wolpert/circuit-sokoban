@@ -1,0 +1,25 @@
+plugins {
+    id 'application'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+application {
+    mainClass = 'com.circuitsokoban.lwjgl3.DesktopLauncher'
+}
+
+// Run assets from the shared assets/ folder during development.
+run {
+    workingDir = rootProject.file('assets')
+    setIgnoreExitValue(true)
+}
