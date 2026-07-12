@@ -8,18 +8,24 @@ package com.circuitsokoban.model;
  * from rotation, not from new sprites.
  *
  * <p>{@code rotationPeriod} is how many distinct orientations the piece has
- * (before its opening mask repeats). Used by the solver to avoid treating a
- * no-op rotation (e.g. rotating a CROSS) as a real move.
+ * (before it repeats, considering flow as well as openings). Used by the solver
+ * to avoid treating a no-op rotation (e.g. rotating a CROSS) as a real move.
  *
- * <p>v1 ships the four basic connectors; DIODE / GATE / ICE are placeholders
- * for a later pass and are not yet handled by {@code Circuit} or the solver.
+ * <p>DIODE is a straight connector that conducts one way only: its
+ * <em>flow direction</em> is {@code Direction.values()[orientation]}, so all four
+ * orientations are distinct even though the opening axis repeats every two. GATE
+ * / ICE remain for a later pass.
  */
 public enum PieceType {
     STRAIGHT(Direction.NORTH.bit() | Direction.SOUTH.bit(), 2),
     ELBOW(Direction.NORTH.bit() | Direction.EAST.bit(), 4),
     TEE(Direction.NORTH.bit() | Direction.EAST.bit() | Direction.SOUTH.bit(), 4),
     CROSS(Direction.NORTH.bit() | Direction.EAST.bit()
-            | Direction.SOUTH.bit() | Direction.WEST.bit(), 1);
+            | Direction.SOUTH.bit() | Direction.WEST.bit(), 1),
+    DIODE(Direction.NORTH.bit() | Direction.SOUTH.bit(), 4);
+
+    /** The four basic (non-directional, always-present) connectors, for generation. */
+    public static final PieceType[] BASIC = {STRAIGHT, ELBOW, TEE, CROSS};
 
     /** Opening mask when orientation == 0. */
     public final int baseMask;

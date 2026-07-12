@@ -82,6 +82,32 @@ class LevelGeneratorTest {
         });
     }
 
+    private static boolean containsDiode(Board b) {
+        for (int y = 0; y < b.height(); y++) {
+            for (int x = 0; x < b.width(); x++) {
+                Piece p = b.pieceAt(new Pos(x, y));
+                if (p != null && p.type() == com.circuitsokoban.model.PieceType.DIODE) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Test
+    void diodeLevelsStaySolvableAndSometimesContainDiodes() {
+        GenParams p = GenParams.medium(); // diodesOnPath == 1
+        boolean anyDiode = false;
+        for (int seed = 0; seed < 16; seed++) {
+            Level level = generator.generate(seed, p);
+            Solver.Result check = new Solver(p.solverMaxStates()).solve(level.freshBoard());
+            assertTrue(check.solvable(), "diode seed " + seed + " must be solvable");
+            assertEquals(level.par(), check.moves(), "cached par must match, seed " + seed);
+            anyDiode |= containsDiode(level.solvedBoard());
+        }
+        assertTrue(anyDiode, "diodesOnPath=1 should place a diode on at least one of these levels");
+    }
+
     @Test
     void hardLevelGeneratesAndIsSolvable() {
         Level level = generator.generate(7L, GenParams.hard());

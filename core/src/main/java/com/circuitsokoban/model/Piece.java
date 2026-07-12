@@ -26,6 +26,30 @@ public record Piece(PieceType type, int orientation) {
         return (openings() & d.bit()) != 0;
     }
 
+    /**
+     * For a DIODE, the direction current flows out of; undefined for other types.
+     * Equal to {@code Direction.values()[orientation]} so it rotates with the piece.
+     */
+    public Direction flowDirection() {
+        return Direction.values()[orientation];
+    }
+
+    /**
+     * Sides power may flow <em>out</em> of. Every opening for normal pieces; only
+     * the flow side for a diode.
+     */
+    public int outputs() {
+        return type == PieceType.DIODE ? flowDirection().bit() : openings();
+    }
+
+    /**
+     * Sides power may flow <em>in</em> through. Every opening for normal pieces;
+     * only the side opposite the flow for a diode.
+     */
+    public int inputs() {
+        return type == PieceType.DIODE ? flowDirection().opposite().bit() : openings();
+    }
+
     /** This piece rotated one step clockwise. */
     public Piece rotatedCW() {
         return new Piece(type, orientation + 1);

@@ -12,11 +12,11 @@ import java.util.Set;
  *
  * <p>Two design points make this canonical:
  * <ul>
- *   <li><b>Pieces are keyed by opening mask, not (type, orientation).</b> The
- *       four basic types occupy disjoint mask ranges, so a mask uniquely
- *       identifies the piece, and a rotation that doesn't change the mask (e.g.
- *       rotating a CROSS, or a STRAIGHT by 180&deg;) collapses to the same key
- *       &mdash; the solver never explores a wasted rotation twice.</li>
+ *   <li><b>Pieces are keyed by their input/output masks, not (type, orientation).</b>
+ *       A rotation that changes nothing connectivity-wise (e.g. rotating a CROSS,
+ *       or a STRAIGHT by 180&deg;) collapses to the same key &mdash; the solver
+ *       never explores a wasted rotation twice &mdash; while a diode's two flow
+ *       directions (identical openings, swapped in/out) stay distinct.</li>
  *   <li><b>The player is normalized to the minimum reachable cell.</b> Since
  *       walking is free and scoring counts only pushes/rotates, every player
  *       position within one walk-reachable region is equivalent; we represent
@@ -44,7 +44,10 @@ public final class StateKey {
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 Piece p = board.pieceAt(new Pos(x, y));
-                masks[y * w + x] = (p == null) ? 0 : p.openings();
+                // Encode both output and input masks: symmetric pieces still collapse
+                // rotationally, but a diode's two flow directions (same openings,
+                // swapped in/out) get distinct keys.
+                masks[y * w + x] = (p == null) ? 0 : (p.outputs() << 4) | p.inputs();
             }
         }
         int canonical = Integer.MAX_VALUE;

@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.circuitsokoban.model.Board;
 import com.circuitsokoban.model.Direction;
 import com.circuitsokoban.model.Piece;
+import com.circuitsokoban.model.PieceType;
 import com.circuitsokoban.model.Pos;
 import com.circuitsokoban.model.Terminal;
 
@@ -121,9 +122,36 @@ public final class BoardRenderer {
                 }
                 sr.setColor(Palette.JOINT);
                 sr.circle(cx, cy, jointR, 20);
+
+                if (piece.type() == PieceType.DIODE) {
+                    drawDiodeArrow(sr, p, piece.flowDirection(), cx, cy);
+                }
             }
         }
         sr.end();
+    }
+
+    /** A dark arrowhead on the diode's flow arm, showing the one-way direction. */
+    private void drawDiodeArrow(ShapeRenderer sr, Pos cell, Direction flow, float cx, float cy) {
+        armEndpoint(cell, flow, end);
+        float vx = end.x - iso.worldX(cell.x(), cell.y());
+        float vy = end.y - iso.worldY(cell.x(), cell.y());
+        float len = (float) Math.sqrt(vx * vx + vy * vy);
+        if (len < 1e-3f) {
+            return;
+        }
+        vx /= len;
+        vy /= len;
+        float apexX = cx + vx * len * 0.92f;
+        float apexY = cy + vy * len * 0.92f;
+        float baseX = cx + vx * len * 0.48f;
+        float baseY = cy + vy * len * 0.48f;
+        float px = -vy;
+        float py = vx;
+        float wingR = iso.halfH() * 0.3f;
+        sr.setColor(Palette.BACKGROUND);
+        sr.triangle(apexX, apexY, baseX + px * wingR, baseY + py * wingR,
+                baseX - px * wingR, baseY - py * wingR);
     }
 
     private void drawTerminalStub(ShapeRenderer sr, Terminal t, Color color, float armWidth, float jointR) {

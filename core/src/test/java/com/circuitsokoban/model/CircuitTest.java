@@ -58,6 +58,20 @@ class CircuitTest {
     }
 
     @Test
+    void diodeConductsAlongItsFlowDirection() {
+        Board b = strip(3);
+        b.setPiece(new Pos(1, 0), new Piece(PieceType.DIODE, Direction.EAST.ordinal())); // flow EAST
+        assertTrue(Circuit.isSolved(b), "power enters from source side (W) and exits E to receiver");
+    }
+
+    @Test
+    void diodeBlocksAgainstItsFlowDirection() {
+        Board b = strip(3);
+        b.setPiece(new Pos(1, 0), new Piece(PieceType.DIODE, Direction.WEST.ordinal())); // flow WEST
+        assertFalse(Circuit.isSolved(b), "diode input faces away from the source, so no power enters");
+    }
+
+    @Test
     void sourceFacingReceiverDirectlyIsSolved() {
         Terminal source = new Terminal(new Pos(0, 0), Direction.EAST);
         Terminal receiver = new Terminal(new Pos(1, 0), Direction.WEST);

@@ -52,6 +52,26 @@ class PieceTest {
     }
 
     @Test
+    void diodeInputsAndOutputsFollowFlowDirection() {
+        Piece d = new Piece(PieceType.DIODE, EAST.ordinal()); // flow EAST
+        assertEquals(EAST, d.flowDirection());
+        assertEquals(EAST.bit(), d.outputs());
+        assertEquals(WEST.bit(), d.inputs());
+        assertEquals(EAST.bit() | WEST.bit(), d.openings(), "diode is a straight along its flow axis");
+    }
+
+    @Test
+    void diodeHasFourDistinctOrientations() {
+        assertEquals(4, PieceType.DIODE.rotationPeriod);
+        // Flow N and flow S share openings but differ in/out.
+        Piece north = new Piece(PieceType.DIODE, NORTH.ordinal());
+        Piece south = new Piece(PieceType.DIODE, SOUTH.ordinal());
+        assertEquals(north.openings(), south.openings());
+        assertEquals(NORTH.bit(), north.outputs());
+        assertEquals(SOUTH.bit(), south.outputs());
+    }
+
+    @Test
     void orientationWrapsModuloFour() {
         assertEquals(new Piece(PieceType.ELBOW, 0), new Piece(PieceType.ELBOW, 4));
         assertEquals(new Piece(PieceType.ELBOW, 1), new Piece(PieceType.ELBOW, -3));

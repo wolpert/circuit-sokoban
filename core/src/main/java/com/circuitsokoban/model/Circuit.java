@@ -9,9 +9,11 @@ import java.util.Set;
  * Evaluates board connectivity: which pieces are electrically joined to the
  * power source, and whether the source reaches the receiver (a solved level).
  *
- * <p>v1 rule (undirected): two adjacent cells are joined iff each has an opening
- * facing the other. Power floods from the source over joined pieces. Diodes
- * (directed edges) and gates (conditional edges) are a later pass.
+ * <p>Rule (directed): power flows from cell A into neighbour B when A has an
+ * <em>output</em> facing B and B has an <em>input</em> facing A. For normal
+ * connectors input == output == openings, so this is just mutual openings; a
+ * diode outputs only along its flow direction and inputs only from the opposite
+ * side, making it one-way. Gates (conditional edges) are a later pass.
  */
 public final class Circuit {
 
@@ -44,7 +46,8 @@ public final class Circuit {
 
         List<Pos> frontier = new ArrayList<>();
         Piece seedPiece = board.pieceAt(seedCell);
-        if (seedPiece != null && seedPiece.hasOpening(backToSource)) {
+        // The seed piece is energized only if it accepts power arriving from the source side.
+        if (seedPiece != null && (seedPiece.inputs() & backToSource.bit()) != 0) {
             energized.add(seedCell);
             frontier.add(seedCell);
         }
@@ -57,8 +60,8 @@ public final class Circuit {
             for (Pos p : frontier) {
                 Piece piece = board.pieceAt(p);
                 for (Direction d : Direction.values()) {
-                    if (!piece.hasOpening(d)) {
-                        continue;
+                    if ((piece.outputs() & d.bit()) == 0) {
+                        continue; // power can only leave along an output side
                     }
                     Pos q = p.step(d);
                     Direction back = d.opposite();
@@ -67,7 +70,7 @@ public final class Circuit {
                         solved = true;
                     }
                     Piece qPiece = board.pieceAt(q);
-                    if (qPiece != null && qPiece.hasOpening(back) && energized.add(q)) {
+                    if (qPiece != null && (qPiece.inputs() & back.bit()) != 0 && energized.add(q)) {
                         nextLayer.add(q);
                     }
                 }

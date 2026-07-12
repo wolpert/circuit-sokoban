@@ -97,6 +97,7 @@ public final class LevelGenerator {
 
         Board board = new Board(w, h, source, receiver, startCell /* placeholder */);
         placePathPieces(board, path, source, receiver);
+        placeDiodes(board, path, source, receiver, rng, p.diodesOnPath());
         addDecoys(board, rng, p.extraPieces());
 
         Pos player = randomEmptyCell(board, rng);
@@ -164,12 +165,53 @@ public final class LevelGenerator {
         }
     }
 
+    /**
+     * Turns up to {@code count} collinear solution-path pieces into one-way diodes,
+     * each flowing toward the receiver so the solved board stays solved. After
+     * scrambling rotates them, the player must re-aim them &mdash; the directional
+     * twist. Only straight (collinear) segments qualify, since a diode is straight.
+     */
+    private void placeDiodes(Board board, List<Pos> path, Terminal source, Terminal receiver,
+                             Random rng, int count) {
+        if (count <= 0) {
+            return;
+        }
+        List<Integer> collinear = new ArrayList<>();
+        for (int i = 0; i < path.size(); i++) {
+            Direction toPrev = (i == 0)
+                    ? directionBetween(path.get(i), source.pos())
+                    : directionBetween(path.get(i), path.get(i - 1));
+            Direction toNext = flowAt(path, receiver, i);
+            if (toNext == toPrev.opposite()) {
+                collinear.add(i);
+            }
+        }
+        Collections.shuffle(collinear, rng);
+        int placed = 0;
+        for (int idx : collinear) {
+            if (placed >= count) {
+                break;
+            }
+            Direction flow = flowAt(path, receiver, idx); // toward the receiver
+            board.setPiece(path.get(idx), new Piece(PieceType.DIODE, flow.ordinal()));
+            placed++;
+        }
+    }
+
+    /** Direction power flows out of path cell {@code i} (toward the next cell, or the receiver at the end). */
+    private static Direction flowAt(List<Pos> path, Terminal receiver, int i) {
+        return (i == path.size() - 1)
+                ? directionBetween(path.get(i), receiver.pos())
+                : directionBetween(path.get(i), path.get(i + 1));
+    }
+
     private void addDecoys(Board board, Random rng, int count) {
         List<Pos> empties = emptyCells(board);
         Collections.shuffle(empties, rng);
-        PieceType[] types = PieceType.values();
         for (int i = 0; i < count && i < empties.size(); i++) {
-            PieceType type = types[rng.nextInt(types.length)];
+            // Basic types only: diodes are introduced deliberately on the path, and
+            // their extra rotation states would inflate the solver's search here.
+            PieceType type = PieceType.BASIC[rng.nextInt(PieceType.BASIC.length)];
             board.setPiece(empties.get(i), new Piece(type, rng.nextInt(4)));
         }
     }
