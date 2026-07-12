@@ -3,8 +3,8 @@ package com.circuitsokoban.lwjgl3;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.circuitsokoban.CircuitSokobanGame;
+import com.circuitsokoban.game.Tier;
 import com.circuitsokoban.screen.GameScreen;
-import com.circuitsokoban.solver.GenParams;
 
 /**
  * Desktop (LWJGL3) launcher. Portrait window to match the Android target.
@@ -23,19 +23,21 @@ public final class DesktopLauncher {
     private static final int WINDOW_H = 960;
 
     public static void main(String[] args) {
-        long seed = 1L;
-        GenParams params = GenParams.medium();
+        long seed = 0L;
+        Tier tier = Tier.MEDIUM;
         String screenshot = null;
         float shotDelay = 0.1f;
         GameScreen.Debug debug = GameScreen.Debug.NONE;
+        boolean menuShot = false;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--seed" -> seed = Long.parseLong(args[++i]);
-                case "--difficulty" -> params = difficulty(args[++i]);
+                case "--difficulty" -> tier = tier(args[++i]);
                 case "--screenshot" -> screenshot = args[++i];
                 case "--shotdelay" -> shotDelay = Float.parseFloat(args[++i]);
                 case "--debug" -> debug = debug(args[++i]);
+                case "--menu" -> menuShot = true;
                 default -> throw new IllegalArgumentException("Unknown arg: " + args[i]);
             }
         }
@@ -47,7 +49,8 @@ public final class DesktopLauncher {
         config.useVsync(true);
         config.setForegroundFPS(60);
 
-        new Lwjgl3Application(new CircuitSokobanGame(seed, params, screenshot, shotDelay, debug), config);
+        new Lwjgl3Application(
+                new CircuitSokobanGame(seed, tier, screenshot, shotDelay, debug, menuShot), config);
     }
 
     private static GameScreen.Debug debug(String name) {
@@ -59,11 +62,11 @@ public final class DesktopLauncher {
         };
     }
 
-    private static GenParams difficulty(String name) {
+    private static Tier tier(String name) {
         return switch (name.toLowerCase()) {
-            case "easy" -> GenParams.easy();
-            case "medium" -> GenParams.medium();
-            case "hard" -> GenParams.hard();
+            case "easy" -> Tier.EASY;
+            case "medium" -> Tier.MEDIUM;
+            case "hard" -> Tier.HARD;
             default -> throw new IllegalArgumentException("Unknown difficulty: " + name);
         };
     }
