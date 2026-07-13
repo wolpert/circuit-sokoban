@@ -14,17 +14,9 @@ complete the circuit.
   rotates them to align connectors.
 - **Goal.** Energize a path of aligned connectors from the power **source** to
   the **receiver**.
-- **Piece types**
-  - **Straight / Elbow / Tee / Cross** — basic connectors; variety comes from
-    rotation, not new sprites.
-  - **Diode** — conducts one way only; rotate it to aim its flow arrow.
-  - **Gate** — a locked connector that only conducts once a *separate secondary
-    circuit* (its own source/receiver) is completed. Gates **latch**: once the
-    secondary completes, the gate stays open.
-  - **Fuse** — a one-use connector on a secondary circuit. Completing that circuit
-    latches its gate open, but the fuse burns out (and is gone) in the same
-    moment — you get a single shot.
-  - **Ice tiles** — a pushed piece slides across ice until it hits an obstacle.
+- **Pieces & tiles.** Basic connectors plus one-way diodes, locked gates, one-use
+  fuses, and ice — see the [reference table](#pieces--tiles) below for what each
+  does, how it looks, and its states.
 - **Scoring.** Pushes and rotations count toward your move total; walking is
   free. Solving under par earns **gold / silver / bronze**.
 - **Undo / redo**, a **move counter**, and **par** derived from an optimal solver.
@@ -35,6 +27,32 @@ complete the circuit.
   localization needed.
 - **Juice.** Eased movement, a tile-by-tile "energize" sweep on solve, an idle
   pulse on the live-but-incomplete chain, particle bursts, and a camera punch.
+
+## Pieces & tiles
+
+The art is flat and abstract (drawn procedurally, no sprite assets). Connectors
+are **arms radiating from a round joint** toward their open sides: the **shape**
+tells you the type, the **colour** tells you the power state —
+
+- **Idle** (aligned but unpowered): grey arms.
+- **Energized** (carrying power from a source): green arms — gently pulsing while
+  the circuit is live but incomplete, steady once solved.
+
+| Element | What it does | How it looks · states |
+|---|---|---|
+| **Floor** | Ordinary tile you stand on and push pieces across. | Dark blue-grey diamonds in a subtle checker. |
+| **Power source** | Emits power; the start of the circuit. | Amber diamond with a short connector stub toward its opening. |
+| **Receiver** | The goal — power must reach it. | Cyan diamond with a stub. |
+| **Secondary source / receiver** | Endpoints of the extra circuit that unlocks gates. | Violet (source) and teal (receiver) diamonds with stubs. |
+| **Player** | The token you move; walks freely and pushes pieces. | A pink-red round token. |
+| **Straight** | Conducts along one axis. | Two arms on opposite sides. |
+| **Elbow** | Conducts around a corner. | Two arms on adjacent sides (an L). |
+| **Tee** | A three-way junction. | Three arms. |
+| **Cross** | Conducts all four ways. | Four arms (rotating it changes nothing). |
+| **Diode** | Conducts **one way only**; rotate to aim it. | A straight with a dark arrowhead on one arm — current flows only in the arrow's direction. |
+| **Gate** | Blocks the path until its secondary circuit completes, then **latches** open. | **Locked:** a solid red bar across the wire. **Open:** the bar retracts to green nubs at the tile edges and the wire runs through — it slides open the moment it unlocks. |
+| **Fuse** | A **one-use** key on a secondary circuit: completing that circuit latches the gate, and the fuse is spent in the same instant. | Coral wire with a bright crack (✕) mark. **Burned:** removed from the board with a shatter burst. |
+| **Ice tile** | A pushed piece that lands on it **slides** until it hits an obstacle. | A frosted steel-blue diamond with a bright frost-crystal mark; a piece sliding across leaves a faint fading trail. |
 
 ## Build & run
 
