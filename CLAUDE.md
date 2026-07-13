@@ -75,17 +75,24 @@ The logical grid is **orthogonal**; isometric is purely a render transform
 - **Directed connectivity:** `Circuit` flows power A→B iff A outputs toward B and
   B inputs from A. Normal pieces have `inputs()==outputs()==openings()`; diodes
   are one-way; gates conduct only when the secondary circuit is complete (two-pass
-  evaluation). `StateKey` encodes `(outputs<<4)|inputs` plus a gate bit, and
-  normalizes the player to its min reachable cell (walking is free).
+  evaluation). `StateKey` encodes `(outputs<<4)|inputs` plus gate/fuse bits and a
+  latch bit, and normalizes the player to its min reachable cell (walking is free).
+- **Stateful resolution (gates/fuses):** `Circuit.evaluate` is pure, but
+  `Circuit.resolve(board)` **mutates** — it latches gates open once the secondary
+  completes (`Board.gateLatched`) and removes energized FUSE pieces. It runs after
+  loading a board and after every move, in **both** `PlaySession` and
+  `Solver.successors`, so solver par matches play. Generation rejects starts whose
+  secondary is already complete (else a fuse would auto-burn on load).
 - **Scoring/solver coupling:** because walking is free, the solver searches over
   "meaningful moves" (pushes + rotates) using player reachability, not walk steps.
 
 ## Extension seams
 
-- **New advanced piece type:** touch `PieceType`, `Circuit` (its conduction
-  rule), `StateKey` (if its state isn't captured by in/out masks), `BoardRenderer`,
-  and `LevelGenerator` (placement) + `GenParams`. See how DIODE/GATE/ICE were
-  added (git log). Keep it inside the 5×5/par envelope.
+- **New advanced piece type:** touch `PieceType`, `Circuit` (its conduction rule,
+  and `resolve` if it changes state like a fuse/gate), `StateKey` (if its state
+  isn't captured by in/out masks — e.g. the gate/fuse bits or the latch),
+  `BoardRenderer`, and `LevelGenerator` (placement) + `GenParams`. See how
+  DIODE/GATE/ICE/FUSE were added (git log). Keep it inside the 5×5/par envelope.
 - **New tutorial (text-free):** exactly three spots — add a `game/Lesson` value, a
   rule in `game/Tutorials.firstUnseen`, and a `case` in `render/TutorialOverlay`.
   The tutorial must stay text-free (i18n avoidance).

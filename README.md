@@ -19,7 +19,11 @@ complete the circuit.
     rotation, not new sprites.
   - **Diode** — conducts one way only; rotate it to aim its flow arrow.
   - **Gate** — a locked connector that only conducts once a *separate secondary
-    circuit* (its own source/receiver) is completed.
+    circuit* (its own source/receiver) is completed. Gates **latch**: once the
+    secondary completes, the gate stays open.
+  - **Fuse** — a one-use connector on a secondary circuit. Completing that circuit
+    latches its gate open, but the fuse burns out (and is gone) in the same
+    moment — you get a single shot.
   - **Ice tiles** — a pushed piece slides across ice until it hits an obstacle.
 - **Scoring.** Pushes and rotations count toward your move total; walking is
   free. Solving under par earns **gold / silver / bronze**.
@@ -100,9 +104,10 @@ assets/                       # runtime working dir (procedural art — no textu
 ## Status
 
 Playable end to end: generation, solver, isometric rendering, input, the juice
-layer, endless-by-tier level select with persistent medals, all three advanced
-piece types (diode / gate / ice), and text-free tutorials.
+layer, endless-by-tier level select with persistent medals, all four advanced
+piece types (diode / gate / ice / one-use fuse), and text-free tutorials.
 
 Not yet built: the **Android launcher module** (desktop-first; the Android SDK
-side is wired but the module is intentionally deferred), a **hint** system, and
-the stretch **fragile / one-use connector**.
+side is wired but the module is intentionally deferred) and a **hint** system.
+The HUD still uses a few English words (only the tutorial is deliberately
+text-free).
