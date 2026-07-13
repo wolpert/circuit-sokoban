@@ -98,6 +98,9 @@ public final class LevelGenerator {
         Board board = new Board(w, h, source, receiver, startCell /* placeholder */);
         placePathPieces(board, path, source, receiver);
         placeDiodes(board, path, source, receiver, rng, p.diodesOnPath());
+        if (p.gateCount() > 0 && !placeGateAndSecondary(board, path, source, receiver, rng)) {
+            return null; // couldn't fit a gate + secondary this attempt; caller retries
+        }
         addDecoys(board, rng, p.extraPieces());
 
         Pos player = randomEmptyCell(board, rng);
@@ -215,6 +218,68 @@ public final class LevelGenerator {
             board.setPiece(path.get(idx), new Piece(PieceType.DIODE, flow.ordinal()));
             placed++;
         }
+    }
+
+    /**
+     * Turns one collinear straight path piece into a locked GATE and adds a minimal
+     * secondary circuit (source2 &rarr; a key straight &rarr; receiver2) on a free
+     * 3-cell line. In the solved board the key is aligned, so the secondary is
+     * complete and the gate conducts; scrambling then rotates the key, so the player
+     * must complete circuit B to unlock gate A. Returns false if it can't fit.
+     */
+    private boolean placeGateAndSecondary(Board board, List<Pos> path,
+                                          Terminal source, Terminal receiver, Random rng) {
+        List<Integer> candidates = new ArrayList<>();
+        for (int i = 0; i < path.size(); i++) {
+            Direction toPrev = (i == 0)
+                    ? directionBetween(path.get(i), source.pos())
+                    : directionBetween(path.get(i), path.get(i - 1));
+            Direction toNext = flowAt(path, receiver, i);
+            if (toNext == toPrev.opposite() && board.pieceAt(path.get(i)).type() == PieceType.STRAIGHT) {
+                candidates.add(i);
+            }
+        }
+        if (candidates.isEmpty()) {
+            return false;
+        }
+        Collections.shuffle(candidates, rng);
+        int idx = candidates.get(0);
+        Direction axis = flowAt(path, receiver, idx);
+        board.setPiece(path.get(idx), new Piece(PieceType.GATE, axis.ordinal()));
+
+        int[] line = findFreeLine(board, rng);
+        if (line == null) {
+            return false;
+        }
+        Pos a = new Pos(line[0], line[1]);
+        Direction d = Direction.values()[line[2]];
+        Pos mid = a.step(d);
+        Pos c = a.step(d, 2);
+        board.setSecondary(new Terminal(a, d), new Terminal(c, d.opposite()));
+        board.setPiece(mid, pieceMatching(d.bit() | d.opposite().bit())); // aligned key straight
+        return true;
+    }
+
+    /** A run of three empty, non-terminal cells for the secondary circuit; {x, y, dirOrdinal} or null. */
+    private int[] findFreeLine(Board board, Random rng) {
+        List<int[]> lines = new ArrayList<>();
+        Direction[] dirs = {Direction.EAST, Direction.NORTH};
+        for (int y = 0; y < board.height(); y++) {
+            for (int x = 0; x < board.width(); x++) {
+                Pos a = new Pos(x, y);
+                for (Direction d : dirs) {
+                    if (freeForSecondary(board, a) && freeForSecondary(board, a.step(d))
+                            && freeForSecondary(board, a.step(d, 2))) {
+                        lines.add(new int[]{x, y, d.ordinal()});
+                    }
+                }
+            }
+        }
+        return lines.isEmpty() ? null : lines.get(rng.nextInt(lines.size()));
+    }
+
+    private boolean freeForSecondary(Board b, Pos p) {
+        return b.inBounds(p) && b.pieceAt(p) == null && !b.isTerminal(p) && !b.isWall(p);
     }
 
     /** Direction power flows out of path cell {@code i} (toward the next cell, or the receiver at the end). */

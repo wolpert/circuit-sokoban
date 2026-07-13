@@ -109,12 +109,36 @@ class LevelGeneratorTest {
     }
 
     @Test
-    void hardLevelsWithIceStaySolvable() {
-        GenParams p = GenParams.hard(); // iceTiles == 2
+    void iceLevelsStaySolvable() {
+        // Ice-focused params: 3 slide tiles, no diode/gate.
+        GenParams p = new GenParams(5, 5, 10, 4, 8, 0.5, 0, 0, 3, 0, 120_000, 400);
         for (int seed = 0; seed < 10; seed++) {
             Level level = generator.generate(seed, p);
             Solver.Result check = new Solver(p.solverMaxStates()).solve(level.freshBoard());
-            assertTrue(check.solvable(), "iced hard seed " + seed + " must be solvable");
+            assertTrue(check.solvable(), "iced seed " + seed + " must be solvable");
+            assertEquals(level.par(), check.moves(), "cached par must match, seed " + seed);
+        }
+    }
+
+    @Test
+    void gateLevelsHaveASecondaryCircuitAndStaySolvable() {
+        GenParams p = GenParams.hard(); // gateCount == 1
+        for (int seed = 0; seed < 12; seed++) {
+            Level level = generator.generate(seed, p);
+            Board b = level.freshBoard();
+            assertTrue(b.hasSecondary(), "gate seed " + seed + " must have a secondary circuit");
+            boolean gate = false;
+            for (int y = 0; y < b.height(); y++) {
+                for (int x = 0; x < b.width(); x++) {
+                    Piece pc = b.pieceAt(new Pos(x, y));
+                    if (pc != null && pc.type() == com.circuitsokoban.model.PieceType.GATE) {
+                        gate = true;
+                    }
+                }
+            }
+            assertTrue(gate, "gate seed " + seed + " must contain a gate");
+            Solver.Result check = new Solver(p.solverMaxStates()).solve(b);
+            assertTrue(check.solvable(), "gate seed " + seed + " must be solvable");
             assertEquals(level.par(), check.moves(), "cached par must match, seed " + seed);
         }
     }

@@ -22,6 +22,12 @@ public final class Palette {
     // Terminals.
     public static final Color SOURCE = new Color(0xffb24dff);   // warm
     public static final Color RECEIVER = new Color(0x4dd0ffff); // cool
+    public static final Color SOURCE2 = new Color(0x9b7cf0ff);   // secondary circuit: violet
+    public static final Color RECEIVER2 = new Color(0x3fc7b0ff); // secondary circuit: teal
+
+    // Gate bar: red when locked, green when the secondary circuit has opened it.
+    public static final Color GATE_LOCKED = new Color(0xe05c6aff);
+    public static final Color GATE_OPEN = new Color(0x7cf6b0ff);
 
     // Connectors.
     public static final Color WIRE_IDLE = new Color(0x8792a8ff);      // aligned but not powered

@@ -28,6 +28,7 @@ package com.circuitsokoban.solver;
  * @param extraPieces    decoy connectors scattered on empty cells before scrambling
  * @param diodesOnPath   collinear solution-path pieces to turn into one-way diodes
  * @param iceTiles       slide tiles placed on empty off-path cells
+ * @param gateCount      locked gates on the primary path (each adds a secondary circuit)
  * @param solverMaxStates state budget for the validating solver; exceeding it -> "too hard", reject
  * @param maxAttempts    how many generate-and-check tries before giving up
  */
@@ -41,21 +42,24 @@ public record GenParams(
         int extraPieces,
         int diodesOnPath,
         int iceTiles,
+        int gateCount,
         int solverMaxStates,
         int maxAttempts) {
 
-    /** Fast backstop; a 5x5 par&le;8 solve stays well under this, so hitting it means "reject". */
+    /** Fast backstop; a 5x5 par&le;9 solve stays well under this, so hitting it means "reject". */
     private static final int GEN_MAX_STATES = 120_000;
 
     public static GenParams easy() {
-        return new GenParams(5, 5, 6, 2, 4, 0.5, 0, 0, 0, GEN_MAX_STATES, 400);
+        return new GenParams(5, 5, 6, 2, 4, 0.5, 0, 0, 0, 0, GEN_MAX_STATES, 400);
     }
 
     public static GenParams medium() {
-        return new GenParams(5, 5, 9, 4, 6, 0.5, 0, 1, 1, GEN_MAX_STATES, 400);
+        return new GenParams(5, 5, 9, 4, 6, 0.5, 0, 1, 1, 0, GEN_MAX_STATES, 400);
     }
 
+    // Hard is the "gate" tier: a locked gate + secondary circuit, plus a diode.
+    // Ice/decoys are dropped here to keep the two-circuit par within the fast envelope.
     public static GenParams hard() {
-        return new GenParams(5, 5, 12, 6, 8, 0.45, 1, 1, 2, GEN_MAX_STATES, 400);
+        return new GenParams(5, 5, 11, 6, 9, 0.45, 0, 1, 0, 1, GEN_MAX_STATES, 400);
     }
 }

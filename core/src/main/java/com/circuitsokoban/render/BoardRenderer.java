@@ -52,6 +52,10 @@ public final class BoardRenderer {
                     c = Palette.SOURCE;
                 } else if (board.receiver().pos().equals(p)) {
                     c = Palette.RECEIVER;
+                } else if (board.hasSecondary() && board.source2().pos().equals(p)) {
+                    c = Palette.SOURCE2;
+                } else if (board.hasSecondary() && board.receiver2().pos().equals(p)) {
+                    c = Palette.RECEIVER2;
                 }
                 fillDiamond(sr, iso.worldX(x, y), iso.worldY(x, y), c);
                 if (board.isIce(p)) {
@@ -87,6 +91,10 @@ public final class BoardRenderer {
         sr.begin(ShapeType.Filled);
         drawTerminalStub(sr, board.source(), Palette.SOURCE, armWidth, jointR);
         drawTerminalStub(sr, board.receiver(), Palette.RECEIVER, armWidth, jointR);
+        if (board.hasSecondary()) {
+            drawTerminalStub(sr, board.source2(), Palette.SOURCE2, armWidth, jointR);
+            drawTerminalStub(sr, board.receiver2(), Palette.RECEIVER2, armWidth, jointR);
+        }
 
         for (int y = 0; y < board.height(); y++) {
             for (int x = 0; x < board.width(); x++) {
@@ -131,10 +139,33 @@ public final class BoardRenderer {
 
                 if (piece.type() == PieceType.DIODE) {
                     drawDiodeArrow(sr, p, piece.flowDirection(), cx, cy);
+                } else if (piece.type() == PieceType.GATE) {
+                    drawGateBar(sr, p, piece, cx, cy, view.gatesUnlocked(), armWidth);
                 }
             }
         }
         sr.end();
+    }
+
+    /** A coloured bar across the gate's axis: red while locked, green once the secondary opens it. */
+    private void drawGateBar(ShapeRenderer sr, Pos cell, Piece piece, float cx, float cy,
+                             boolean unlocked, float armWidth) {
+        Direction axis = firstOpening(piece);
+        Direction perp = axis.rotateCW();
+        armEndpoint(cell, perp, end);
+        float vx = end.x - iso.worldX(cell.x(), cell.y());
+        float vy = end.y - iso.worldY(cell.x(), cell.y());
+        sr.setColor(unlocked ? Palette.GATE_OPEN : Palette.GATE_LOCKED);
+        sr.rectLine(cx + vx * 0.85f, cy + vy * 0.85f, cx - vx * 0.85f, cy - vy * 0.85f, armWidth * 1.3f);
+    }
+
+    private static Direction firstOpening(Piece piece) {
+        for (Direction d : Direction.values()) {
+            if (piece.hasOpening(d)) {
+                return d;
+            }
+        }
+        return Direction.NORTH;
     }
 
     /** A dark arrowhead on the diode's flow arm, showing the one-way direction. */

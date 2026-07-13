@@ -13,8 +13,11 @@ package com.circuitsokoban.model;
  *
  * <p>DIODE is a straight connector that conducts one way only: its
  * <em>flow direction</em> is {@code Direction.values()[orientation]}, so all four
- * orientations are distinct even though the opening axis repeats every two. GATE
- * / ICE remain for a later pass.
+ * orientations are distinct even though the opening axis repeats every two.
+ *
+ * <p>GATE is a straight connector that only conducts while a separate secondary
+ * circuit on the board is complete (see {@code Circuit}); otherwise it blocks the
+ * path. ICE is not a piece &mdash; it's a board tile (see {@code Board.isIce}).
  */
 public enum PieceType {
     STRAIGHT(Direction.NORTH.bit() | Direction.SOUTH.bit(), 2),
@@ -22,7 +25,8 @@ public enum PieceType {
     TEE(Direction.NORTH.bit() | Direction.EAST.bit() | Direction.SOUTH.bit(), 4),
     CROSS(Direction.NORTH.bit() | Direction.EAST.bit()
             | Direction.SOUTH.bit() | Direction.WEST.bit(), 1),
-    DIODE(Direction.NORTH.bit() | Direction.SOUTH.bit(), 4);
+    DIODE(Direction.NORTH.bit() | Direction.SOUTH.bit(), 4),
+    GATE(Direction.NORTH.bit() | Direction.SOUTH.bit(), 2);
 
     /** The four basic (non-directional, always-present) connectors, for generation. */
     public static final PieceType[] BASIC = {STRAIGHT, ELBOW, TEE, CROSS};

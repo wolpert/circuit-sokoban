@@ -46,8 +46,17 @@ public final class StateKey {
                 Piece p = board.pieceAt(new Pos(x, y));
                 // Encode both output and input masks: symmetric pieces still collapse
                 // rotationally, but a diode's two flow directions (same openings,
-                // swapped in/out) get distinct keys.
-                masks[y * w + x] = (p == null) ? 0 : (p.outputs() << 4) | p.inputs();
+                // swapped in/out) get distinct keys. A gate carries an extra bit so
+                // it isn't confused with a same-shaped straight sitting in that cell.
+                if (p == null) {
+                    masks[y * w + x] = 0;
+                } else {
+                    int code = (p.outputs() << 4) | p.inputs();
+                    if (p.type() == com.circuitsokoban.model.PieceType.GATE) {
+                        code |= 1 << 8;
+                    }
+                    masks[y * w + x] = code;
+                }
             }
         }
         int canonical = Integer.MAX_VALUE;

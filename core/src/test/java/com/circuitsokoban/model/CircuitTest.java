@@ -71,6 +71,42 @@ class CircuitTest {
         assertFalse(Circuit.isSolved(b), "diode input faces away from the source, so no power enters");
     }
 
+    /**
+     * Primary: source(0,0)E -> gate(1,0) -> receiver(2,0)W. Secondary in row 2:
+     * source2(0,2) faces receiver2(1,2) directly, so it completes iff source2 opens EAST.
+     */
+    private Board gateBoard(boolean secondaryComplete, int gateOrientation) {
+        Terminal source = new Terminal(new Pos(0, 0), Direction.EAST);
+        Terminal receiver = new Terminal(new Pos(2, 0), Direction.WEST);
+        Board b = new Board(3, 3, source, receiver, new Pos(1, 1));
+        b.setPiece(new Pos(1, 0), new Piece(PieceType.GATE, gateOrientation));
+        Terminal s2 = new Terminal(new Pos(0, 2), secondaryComplete ? Direction.EAST : Direction.WEST);
+        Terminal r2 = new Terminal(new Pos(1, 2), Direction.WEST);
+        b.setSecondary(s2, r2);
+        return b;
+    }
+
+    @Test
+    void gateConductsWhenSecondaryCircuitIsComplete() {
+        Circuit.Result r = Circuit.evaluate(gateBoard(true, Direction.EAST.ordinal()));
+        assertTrue(r.gatesUnlocked());
+        assertTrue(r.solved());
+    }
+
+    @Test
+    void gateBlocksWhenSecondaryCircuitIsIncomplete() {
+        Circuit.Result r = Circuit.evaluate(gateBoard(false, Direction.EAST.ordinal()));
+        assertFalse(r.gatesUnlocked());
+        assertFalse(r.solved(), "gate is aligned but locked, so the primary can't pass");
+    }
+
+    @Test
+    void unlockedButMisalignedGateStillDoesNotSolve() {
+        Circuit.Result r = Circuit.evaluate(gateBoard(true, Direction.NORTH.ordinal())); // N|S, wrong axis
+        assertTrue(r.gatesUnlocked());
+        assertFalse(r.solved());
+    }
+
     @Test
     void sourceFacingReceiverDirectlyIsSolved() {
         Terminal source = new Terminal(new Pos(0, 0), Direction.EAST);

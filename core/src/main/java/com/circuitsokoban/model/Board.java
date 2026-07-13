@@ -26,6 +26,8 @@ public final class Board {
     private final boolean[][] ice;     // [x][y], slide tiles; fixed for a level
     private final Terminal source;
     private final Terminal receiver;
+    private Terminal source2;          // optional secondary circuit that unlocks gates
+    private Terminal receiver2;
     private Pos player;
 
     public Board(int width, int height, Terminal source, Terminal receiver, Pos player) {
@@ -50,6 +52,8 @@ public final class Board {
         }
         this.source = other.source;
         this.receiver = other.receiver;
+        this.source2 = other.source2;
+        this.receiver2 = other.receiver2;
         this.player = other.player;
     }
 
@@ -75,6 +79,12 @@ public final class Board {
         player = p;
     }
 
+    /** Adds a secondary source/receiver pair whose completion unlocks GATE pieces. */
+    public void setSecondary(Terminal source2, Terminal receiver2) {
+        this.source2 = source2;
+        this.receiver2 = receiver2;
+    }
+
     // ---- queries ----
 
     public int width() { return width; }
@@ -82,6 +92,9 @@ public final class Board {
     public Pos player() { return player; }
     public Terminal source() { return source; }
     public Terminal receiver() { return receiver; }
+    public Terminal source2() { return source2; }
+    public Terminal receiver2() { return receiver2; }
+    public boolean hasSecondary() { return source2 != null && receiver2 != null; }
 
     public boolean inBounds(Pos p) {
         return p.x() >= 0 && p.x() < width && p.y() >= 0 && p.y() < height;
@@ -101,7 +114,9 @@ public final class Board {
     }
 
     public boolean isTerminal(Pos p) {
-        return source.pos().equals(p) || receiver.pos().equals(p);
+        return source.pos().equals(p) || receiver.pos().equals(p)
+                || (source2 != null && source2.pos().equals(p))
+                || (receiver2 != null && receiver2.pos().equals(p));
     }
 
     /** A cell the player (or a pushed piece) can occupy: in bounds and empty. */

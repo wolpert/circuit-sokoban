@@ -76,6 +76,7 @@ public final class BoardView {
     private Pos receiverCell;
 
     private boolean solved;
+    private boolean gatesUnlocked = true;
     private Set<Pos> energized = new HashSet<>();
 
     private final List<Particle> particles = new ArrayList<>();
@@ -101,6 +102,7 @@ public final class BoardView {
         particles.clear();
         energized = new HashSet<>(circuit.energized());
         solved = circuit.solved();
+        gatesUnlocked = circuit.gatesUnlocked();
         receiverCell = board.receiver().pos();
     }
 
@@ -123,6 +125,7 @@ public final class BoardView {
 
         spawnJoinBursts(circuit.energized());
         energized = new HashSet<>(circuit.energized());
+        gatesUnlocked = circuit.gatesUnlocked();
     }
 
     public void onInvalidPush(Pos pieceCell, Direction dir) {
@@ -137,6 +140,7 @@ public final class BoardView {
     /** Start the sequential energize sweep, the solve burst schedule, and the camera punch. */
     public void onSolved(Circuit.Result circuit) {
         solved = true;
+        gatesUnlocked = circuit.gatesUnlocked();
         energized = new HashSet<>(circuit.energized());
         waveLayers = circuit.layers();
         layerOf = new HashMap<>();
@@ -260,6 +264,10 @@ public final class BoardView {
             return 1f;
         }
         return 0.72f + 0.28f * (0.5f + 0.5f * MathUtils.sin(time * PULSE_SPEED));
+    }
+
+    public boolean gatesUnlocked() {
+        return gatesUnlocked;
     }
 
     /** Camera zoom for the solve punch (dips in then settles back to 1). */
