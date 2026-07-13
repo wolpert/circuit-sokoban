@@ -68,6 +68,19 @@ public final class Progress {
         return store.getInt(goldKey(tier), 0);
     }
 
+    // ---- one-time tutorials ----
+
+    public boolean hasSeenLesson(Lesson lesson) {
+        return store.getInt(lessonKey(lesson), 0) != 0;
+    }
+
+    public void markLessonSeen(Lesson lesson) {
+        store.putInt(lessonKey(lesson), 1);
+        store.flush();
+    }
+
+    // ---- per-tier position ----
+
     public long currentSeed(Tier tier) {
         return store.getInt(curKey(tier), 0);
     }
@@ -79,6 +92,7 @@ public final class Progress {
 
     // ---- keys ----
 
+    private static String lessonKey(Lesson l) { return "lesson." + l.name(); }
     private static String bestKey(Tier t, long seed) { return "best." + t.name() + "." + seed; }
     private static String rankKey(Tier t, long seed) { return "rank." + t.name() + "." + seed; }
     private static String curKey(Tier t) { return "cur." + t.name(); }

@@ -59,6 +59,15 @@ class ProgressTest {
     }
 
     @Test
+    void lessonsStartUnseenAndPersistIndependently() {
+        Progress p = new Progress(new MemoryStore());
+        assertFalse(p.hasSeenLesson(Lesson.DIODE));
+        p.markLessonSeen(Lesson.DIODE);
+        assertTrue(p.hasSeenLesson(Lesson.DIODE));
+        assertFalse(p.hasSeenLesson(Lesson.GATE), "marking one lesson doesn't mark others");
+    }
+
+    @Test
     void tiersAndCurrentSeedAreIndependent() {
         Progress p = new Progress(new MemoryStore());
         p.record(Tier.EASY, level(0, 3), 3);

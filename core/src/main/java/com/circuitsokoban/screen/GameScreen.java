@@ -16,11 +16,13 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.circuitsokoban.game.Lesson;
 import com.circuitsokoban.game.Navigator;
 import com.circuitsokoban.game.PlayController;
 import com.circuitsokoban.game.PlaySession;
 import com.circuitsokoban.game.Progress;
 import com.circuitsokoban.game.Tier;
+import com.circuitsokoban.game.Tutorials;
 import com.circuitsokoban.input.GameInput;
 import com.circuitsokoban.model.Board;
 import com.circuitsokoban.model.Direction;
@@ -29,6 +31,7 @@ import com.circuitsokoban.render.BoardRenderer;
 import com.circuitsokoban.render.BoardView;
 import com.circuitsokoban.render.IsoProjector;
 import com.circuitsokoban.render.Palette;
+import com.circuitsokoban.render.TutorialOverlay;
 import com.circuitsokoban.solver.Level;
 import com.circuitsokoban.solver.LevelGenerator;
 
@@ -39,8 +42,11 @@ import com.circuitsokoban.solver.LevelGenerator;
  */
 public final class GameScreen extends ScreenAdapter {
 
-    /** Debug triggers for headless verification of the animation layer. */
-    public enum Debug { NONE, KICK_ROTATE, KICK_PUSH, SOLVED_WAVE }
+    /** Debug triggers for headless verification of the animation + tutorial layers. */
+    public enum Debug {
+        NONE, KICK_ROTATE, KICK_PUSH, SOLVED_WAVE,
+        TUTORIAL_BASICS, TUTORIAL_DIODE, TUTORIAL_ICE, TUTORIAL_GATE
+    }
 
     private static final float WORLD_W = 540f;
     private static final float WORLD_H = 960f;
@@ -64,9 +70,12 @@ public final class GameScreen extends ScreenAdapter {
     private final BoardView view;
     private final PlaySession session;
     private final PlayController controller;
+    private final TutorialOverlay overlay;
 
     private final Vector2 tmp = new Vector2();
     private boolean recorded;
+    private Lesson tutorial;     // non-null while a text-free tutorial is showing
+    private float tutorialTime;
 
     public GameScreen(Navigator nav, Progress progress, Tier tier, long seed, Debug debug) {
         this.nav = nav;
@@ -95,6 +104,27 @@ public final class GameScreen extends ScreenAdapter {
         this.view = new BoardView(iso);
         this.renderer = new BoardRenderer(iso);
         this.controller = new PlayController(session, view);
+        this.overlay = new TutorialOverlay(iso, WORLD_W, WORLD_H);
+
+        this.tutorial = resolveTutorial();
+        if (tutorial != null && !isTutorialDebug()) {
+            progress.markLessonSeen(tutorial); // one-time: mark on first show
+        }
+    }
+
+    private Lesson resolveTutorial() {
+        return switch (debug) {
+            case TUTORIAL_BASICS -> Lesson.BASICS;
+            case TUTORIAL_DIODE -> Lesson.DIODE;
+            case TUTORIAL_ICE -> Lesson.ICE;
+            case TUTORIAL_GATE -> Lesson.GATE;
+            default -> Tutorials.firstUnseen(session.board(), progress);
+        };
+    }
+
+    private boolean isTutorialDebug() {
+        return debug == Debug.TUTORIAL_BASICS || debug == Debug.TUTORIAL_DIODE
+                || debug == Debug.TUTORIAL_ICE || debug == Debug.TUTORIAL_GATE;
     }
 
     /** Fires the configured debug action once (headless screenshots). */
@@ -126,7 +156,8 @@ public final class GameScreen extends ScreenAdapter {
 
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(new InputMultiplexer(new NavInput(),
+        // Tutorial dismiss must run first so its tap doesn't also drive the game.
+        Gdx.input.setInputProcessor(new InputMultiplexer(new TutorialInput(), new NavInput(),
                 new GameInput(controller, viewport, iso)));
     }
 
@@ -146,6 +177,11 @@ public final class GameScreen extends ScreenAdapter {
         camera.update();
         shapes.setProjectionMatrix(camera.combined);
         renderer.render(shapes, session.board(), view);
+
+        if (tutorial != null) {
+            tutorialTime += delta;
+            overlay.draw(shapes, session.board(), tutorial, tutorialTime);
+        }
 
         drawHud();
     }
@@ -179,6 +215,27 @@ public final class GameScreen extends ScreenAdapter {
         long next = seed + 1;
         progress.setCurrentSeed(tier, next);
         nav.playLevel(tier, next);
+    }
+
+    /** While a tutorial is up, the first tap or key press just dismisses it. */
+    private final class TutorialInput extends InputAdapter {
+        @Override
+        public boolean keyDown(int keycode) {
+            return dismiss();
+        }
+
+        @Override
+        public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+            return dismiss();
+        }
+
+        private boolean dismiss() {
+            if (tutorial == null) {
+                return false; // not active: let the game handle the input
+            }
+            tutorial = null;
+            return true;
+        }
     }
 
     /** Navigation input: menu button, and (once solved) advance to the next level. */

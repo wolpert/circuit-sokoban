@@ -58,6 +58,10 @@ public final class DesktopLauncher {
             case "kick-rotate" -> GameScreen.Debug.KICK_ROTATE;
             case "kick-push" -> GameScreen.Debug.KICK_PUSH;
             case "solved" -> GameScreen.Debug.SOLVED_WAVE;
+            case "tutorial-basics" -> GameScreen.Debug.TUTORIAL_BASICS;
+            case "tutorial-diode" -> GameScreen.Debug.TUTORIAL_DIODE;
+            case "tutorial-ice" -> GameScreen.Debug.TUTORIAL_ICE;
+            case "tutorial-gate" -> GameScreen.Debug.TUTORIAL_GATE;
             default -> throw new IllegalArgumentException("Unknown debug: " + name);
         };
     }

@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
+import com.circuitsokoban.game.Lesson;
 import com.circuitsokoban.game.MemoryStore;
 import com.circuitsokoban.game.Navigator;
 import com.circuitsokoban.game.PreferencesStore;
@@ -57,12 +58,25 @@ public final class CircuitSokobanGame extends Game implements Navigator {
         return screenshotPath != null || debug != GameScreen.Debug.NONE;
     }
 
+    private static boolean isTutorialDebug(GameScreen.Debug d) {
+        return d == GameScreen.Debug.TUTORIAL_BASICS || d == GameScreen.Debug.TUTORIAL_DIODE
+                || d == GameScreen.Debug.TUTORIAL_ICE || d == GameScreen.Debug.TUTORIAL_GATE;
+    }
+
     @Override
     public void create() {
         Store store = screenshotMode()
                 ? new MemoryStore()
                 : new PreferencesStore(Gdx.app.getPreferences("circuit-sokoban"));
         progress = new Progress(store);
+
+        // Keep non-tutorial screenshots clean: pre-mark lessons seen so no overlay shows
+        // unless a tutorial debug explicitly requests one.
+        if (screenshotMode() && !isTutorialDebug(debug)) {
+            for (Lesson lesson : Lesson.values()) {
+                progress.markLessonSeen(lesson);
+            }
+        }
 
         if (screenshotMode() && menuShot) {
             showMenu();               // capture the menu; shotScreen stays null
