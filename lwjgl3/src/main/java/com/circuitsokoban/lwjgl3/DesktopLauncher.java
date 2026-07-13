@@ -29,6 +29,7 @@ public final class DesktopLauncher {
         float shotDelay = 0.1f;
         GameScreen.Debug debug = GameScreen.Debug.NONE;
         boolean menuShot = false;
+        String legendDir = null;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -38,6 +39,7 @@ public final class DesktopLauncher {
                 case "--shotdelay" -> shotDelay = Float.parseFloat(args[++i]);
                 case "--debug" -> debug = debug(args[++i]);
                 case "--menu" -> menuShot = true;
+                case "--legend" -> legendDir = args[++i];
                 default -> throw new IllegalArgumentException("Unknown arg: " + args[i]);
             }
         }
@@ -50,7 +52,8 @@ public final class DesktopLauncher {
         config.setForegroundFPS(60);
 
         new Lwjgl3Application(
-                new CircuitSokobanGame(seed, tier, screenshot, shotDelay, debug, menuShot), config);
+                new CircuitSokobanGame(seed, tier, screenshot, shotDelay, debug, menuShot, legendDir),
+                config);
     }
 
     private static GameScreen.Debug debug(String name) {

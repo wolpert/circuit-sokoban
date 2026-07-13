@@ -13,6 +13,7 @@ import com.circuitsokoban.game.Progress;
 import com.circuitsokoban.game.Store;
 import com.circuitsokoban.game.Tier;
 import com.circuitsokoban.screen.GameScreen;
+import com.circuitsokoban.screen.LegendScreen;
 import com.circuitsokoban.screen.MenuScreen;
 import java.nio.ByteBuffer;
 
@@ -32,6 +33,7 @@ public final class CircuitSokobanGame extends Game implements Navigator {
     private final float shotDelay;
     private final GameScreen.Debug debug;
     private final boolean menuShot;      // screenshot the menu instead of a level
+    private final String legendDir;      // non-null: export piece icons to this dir, then exit
 
     private Progress progress;
     private GameScreen shotScreen;
@@ -41,17 +43,19 @@ public final class CircuitSokobanGame extends Game implements Navigator {
     private float debugAt;
 
     public CircuitSokobanGame() {
-        this(0L, Tier.MEDIUM, null, 0.1f, GameScreen.Debug.NONE, false);
+        this(0L, Tier.MEDIUM, null, 0.1f, GameScreen.Debug.NONE, false, null);
     }
 
     public CircuitSokobanGame(long startSeed, Tier startTier, String screenshotPath,
-                              float shotDelay, GameScreen.Debug debug, boolean menuShot) {
+                              float shotDelay, GameScreen.Debug debug, boolean menuShot,
+                              String legendDir) {
         this.startSeed = startSeed;
         this.startTier = startTier;
         this.screenshotPath = screenshotPath;
         this.shotDelay = shotDelay;
         this.debug = debug;
         this.menuShot = menuShot;
+        this.legendDir = legendDir;
     }
 
     private boolean screenshotMode() {
@@ -65,6 +69,10 @@ public final class CircuitSokobanGame extends Game implements Navigator {
 
     @Override
     public void create() {
+        if (legendDir != null) {
+            setScreen(new LegendScreen(this, legendDir));
+            return;
+        }
         Store store = screenshotMode()
                 ? new MemoryStore()
                 : new PreferencesStore(Gdx.app.getPreferences("circuit-sokoban"));
@@ -111,8 +119,8 @@ public final class CircuitSokobanGame extends Game implements Navigator {
     @Override
     public void render() {
         super.render();
-        if (screenshotPath == null) {
-            return;
+        if (legendDir != null || screenshotPath == null) {
+            return; // legend export drives itself; interactive runs never capture
         }
         elapsed += Gdx.graphics.getDeltaTime();
         frame++;

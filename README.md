@@ -30,29 +30,28 @@ complete the circuit.
 
 ## Pieces & tiles
 
-The art is flat and abstract (drawn procedurally, no sprite assets). Connectors
-are **arms radiating from a round joint** toward their open sides: the **shape**
-tells you the type, the **colour** tells you the power state —
+Flat, abstract art, drawn procedurally (no sprite assets). Connectors are arms
+radiating from a round joint: the **shape** tells you the type, the **colour**
+tells you the power state — grey when idle, green when energized (pulsing while
+the circuit is live but incomplete, steady once solved):
 
-- **Idle** (aligned but unpowered): grey arms.
-- **Energized** (carrying power from a source): green arms — gently pulsing while
-  the circuit is live but incomplete, steady once solved.
+<img src="docs/pieces/straight.png" width="96" alt="idle connector"> idle &nbsp;→&nbsp; <img src="docs/pieces/energized.png" width="96" alt="energized wire feeding from a source"> energized
 
-| Element | What it does | How it looks · states |
-|---|---|---|
-| **Floor** | Ordinary tile you stand on and push pieces across. | Dark blue-grey diamonds in a subtle checker. |
-| **Power source** | Emits power; the start of the circuit. | Amber diamond with a short connector stub toward its opening. |
-| **Receiver** | The goal — power must reach it. | Cyan diamond with a stub. |
-| **Secondary source / receiver** | Endpoints of the extra circuit that unlocks gates. | Violet (source) and teal (receiver) diamonds with stubs. |
-| **Player** | The token you move; walks freely and pushes pieces. | A pink-red round token. |
-| **Straight** | Conducts along one axis. | Two arms on opposite sides. |
-| **Elbow** | Conducts around a corner. | Two arms on adjacent sides (an L). |
-| **Tee** | A three-way junction. | Three arms. |
-| **Cross** | Conducts all four ways. | Four arms (rotating it changes nothing). |
-| **Diode** | Conducts **one way only**; rotate to aim it. | A straight with a dark arrowhead on one arm — current flows only in the arrow's direction. |
-| **Gate** | Blocks the path until its secondary circuit completes, then **latches** open. | **Locked:** a solid red bar across the wire. **Open:** the bar retracts to green nubs at the tile edges and the wire runs through — it slides open the moment it unlocks. |
-| **Fuse** | A **one-use** key on a secondary circuit: completing that circuit latches the gate, and the fuse is spent in the same instant. | Coral wire with a bright crack (✕) mark. **Burned:** removed from the board with a shatter burst. |
-| **Ice tile** | A pushed piece that lands on it **slides** until it hits an obstacle. | A frosted steel-blue diamond with a bright frost-crystal mark; a piece sliding across leaves a faint fading trail. |
+| | Element | What it does |
+|:-:|---|---|
+| <img src="docs/pieces/floor.png" width="92" alt="floor"> | **Floor** | Ordinary tile you stand on and push pieces across. |
+| <img src="docs/pieces/source.png" width="92" alt="power source"> | **Power source** | Emits power; the start of the circuit. |
+| <img src="docs/pieces/receiver.png" width="92" alt="receiver"> | **Receiver** | The goal — power must reach it. |
+| <img src="docs/pieces/source2.png" width="92" alt="secondary source"> <img src="docs/pieces/receiver2.png" width="92" alt="secondary receiver"> | **Secondary source / receiver** | Endpoints of the extra circuit that unlocks gates (violet source, teal receiver). |
+| <img src="docs/pieces/player.png" width="92" alt="player token"> | **Player** | The token you move; walks freely and pushes pieces. |
+| <img src="docs/pieces/straight.png" width="92" alt="straight"> | **Straight** | Conducts along one axis. |
+| <img src="docs/pieces/elbow.png" width="92" alt="elbow"> | **Elbow** | Conducts around a corner. |
+| <img src="docs/pieces/tee.png" width="92" alt="tee"> | **Tee** | A three-way junction. |
+| <img src="docs/pieces/cross.png" width="92" alt="cross"> | **Cross** | Conducts all four ways (rotating it changes nothing). |
+| <img src="docs/pieces/diode.png" width="92" alt="diode"> | **Diode** | Conducts **one way only** — current flows in the arrow's direction. Rotate to aim it. |
+| <img src="docs/pieces/gate-locked.png" width="92" alt="locked gate"> <img src="docs/pieces/gate-open.png" width="92" alt="open gate"> | **Gate** (locked → open) | Blocks the path until its secondary circuit completes, then **latches** open: the red barrier retracts and the wire runs through. |
+| <img src="docs/pieces/fuse.png" width="92" alt="fuse"> | **Fuse** | A **one-use** key on a secondary circuit: completing that circuit latches the gate, and the fuse burns out (gone, with a shatter burst) in the same instant. |
+| <img src="docs/pieces/ice.png" width="92" alt="ice tile"> | **Ice tile** | A pushed piece that lands on it **slides** until it hits an obstacle; sliding pieces leave a faint trail. |
 
 ## Build & run
 

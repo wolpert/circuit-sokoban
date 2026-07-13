@@ -34,6 +34,14 @@ headless FPS varies), `--menu` (capture the level-select), and `--debug`:
 `tutorial-basics|diode|ice|gate` (force a tutorial overlay). The framebuffer is
 captured bottom-up and flipped before writing — the live game renders upright.
 
+The README's piece/tile icons live in `docs/pieces/*.png` and are rendered with
+the real `BoardRenderer` via `--legend <abs dir>` (`screen/LegendScreen`).
+Regenerate them whenever piece rendering changes:
+
+```bash
+xvfb-run -a -s "-screen 0 540x960x24" ./gradlew :lwjgl3:run --args="--legend $(pwd)/docs/pieces"
+```
+
 ## Architecture
 
 Two Gradle modules: `core` (all game code) and `lwjgl3` (desktop launcher). The
