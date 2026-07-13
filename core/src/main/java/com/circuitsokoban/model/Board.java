@@ -23,6 +23,7 @@ public final class Board {
     private final int height;
     private final boolean[][] walls;   // [x][y], immutable for a level's lifetime
     private final Piece[][] pieces;    // [x][y], null == empty
+    private final boolean[][] ice;     // [x][y], slide tiles; fixed for a level
     private final Terminal source;
     private final Terminal receiver;
     private Pos player;
@@ -32,6 +33,7 @@ public final class Board {
         this.height = height;
         this.walls = new boolean[width][height];
         this.pieces = new Piece[width][height];
+        this.ice = new boolean[width][height];
         this.source = source;
         this.receiver = receiver;
         this.player = player;
@@ -41,6 +43,7 @@ public final class Board {
         this.width = other.width;
         this.height = other.height;
         this.walls = other.walls; // shared: never mutated after construction
+        this.ice = other.ice;     // shared: fixed for a level
         this.pieces = new Piece[width][height];
         for (int x = 0; x < width; x++) {
             System.arraycopy(other.pieces[x], 0, this.pieces[x], 0, height);
@@ -58,6 +61,10 @@ public final class Board {
 
     public void setWall(Pos p, boolean wall) {
         walls[p.x()][p.y()] = wall;
+    }
+
+    public void setIce(Pos p, boolean isIce) {
+        ice[p.x()][p.y()] = isIce;
     }
 
     public void setPiece(Pos p, Piece piece) {
@@ -82,6 +89,11 @@ public final class Board {
 
     public boolean isWall(Pos p) {
         return inBounds(p) && walls[p.x()][p.y()];
+    }
+
+    /** A slide tile: a pushed piece that lands on ice keeps sliding until an obstacle. */
+    public boolean isIce(Pos p) {
+        return inBounds(p) && ice[p.x()][p.y()];
     }
 
     public Piece pieceAt(Pos p) {
@@ -135,14 +147,28 @@ public final class Board {
         if (pushed != null) {
             Pos beyond = ahead.step(d);
             if (isStandable(beyond)) {
+                Pos dest = slideDestination(beyond, d);
                 Board next = copy();
                 next.pieces[ahead.x()][ahead.y()] = null;
-                next.pieces[beyond.x()][beyond.y()] = pushed;
-                next.player = ahead;
-                return MoveResult.push(next, ahead, beyond, d);
+                next.pieces[dest.x()][dest.y()] = pushed;
+                next.player = ahead; // the player moves one tile; only the piece slides
+                return MoveResult.push(next, ahead, dest, d);
             }
         }
         return MoveResult.illegal();
+    }
+
+    /**
+     * Where a piece pushed onto {@code landing} comes to rest: it keeps sliding in
+     * direction {@code d} while it's on ice and the next tile is free, stopping on
+     * the first solid tile or against an obstacle.
+     */
+    public Pos slideDestination(Pos landing, Direction d) {
+        Pos cur = landing;
+        while (isIce(cur) && isStandable(cur.step(d))) {
+            cur = cur.step(d);
+        }
+        return cur;
     }
 
     /**

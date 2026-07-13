@@ -105,7 +105,26 @@ public final class LevelGenerator {
             return null;
         }
         board.setPlayer(player);
+        placeIce(board, rng, p.iceTiles());
         return board;
+    }
+
+    /**
+     * Sprinkles ice on empty, off-path cells (never a piece cell, terminal, or the
+     * player's start). Because the solution path and scramble never rest a piece on
+     * ice, every level stays solvable-by-construction; ice only constrains where
+     * pieces the player pushes off-path can come to rest.
+     */
+    private void placeIce(Board board, Random rng, int count) {
+        if (count <= 0) {
+            return;
+        }
+        List<Pos> empties = emptyCells(board);
+        empties.remove(board.player());
+        Collections.shuffle(empties, rng);
+        for (int i = 0; i < count && i < empties.size(); i++) {
+            board.setIce(empties.get(i), true);
+        }
     }
 
     /**
@@ -243,7 +262,11 @@ public final class LevelGenerator {
             for (Direction t : Direction.values()) {
                 Pos mid = pc.step(t);      // piece's new cell == where the player stands before pulling
                 Pos land = pc.step(t, 2);  // player's cell after retreating
-                if (board.isStandable(mid) && board.isStandable(land) && reachable.contains(mid)) {
+                // Never rest a piece on ice: a forward push would slide it further,
+                // so the pull would not invert it. Keeping pieces off ice during
+                // scramble preserves solvability-by-construction (ice stays off-path).
+                if (board.isStandable(mid) && board.isStandable(land)
+                        && !board.isIce(mid) && reachable.contains(mid)) {
                     candidates.add(new Pos[]{pc, mid, land});
                 }
             }

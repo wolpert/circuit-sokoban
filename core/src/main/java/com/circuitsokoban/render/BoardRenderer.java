@@ -45,12 +45,18 @@ public final class BoardRenderer {
             for (int x = 0; x < board.width(); x++) {
                 Pos p = new Pos(x, y);
                 Color c = (x + y) % 2 == 0 ? Palette.TILE_DARK : Palette.TILE_LIGHT;
+                if (board.isIce(p)) {
+                    c = Palette.ICE;
+                }
                 if (board.source().pos().equals(p)) {
                     c = Palette.SOURCE;
                 } else if (board.receiver().pos().equals(p)) {
                     c = Palette.RECEIVER;
                 }
                 fillDiamond(sr, iso.worldX(x, y), iso.worldY(x, y), c);
+                if (board.isIce(p)) {
+                    drawIceSheen(sr, iso.worldX(x, y), iso.worldY(x, y));
+                }
             }
         }
         sr.end();
@@ -195,6 +201,15 @@ public final class BoardRenderer {
         float nx = iso.worldX(p.x() + d.dx, p.y() + d.dy);
         float ny = iso.worldY(p.x() + d.dx, p.y() + d.dy);
         out.set((cx + nx) / 2f, (cy + ny) / 2f);
+    }
+
+    /** Two faint parallel streaks to read the tile as slippery. */
+    private void drawIceSheen(ShapeRenderer sr, float cx, float cy) {
+        float hw = iso.halfW();
+        float hh = iso.halfH();
+        sr.setColor(Palette.ICE_SHEEN);
+        sr.rectLine(cx - hw * 0.32f, cy + hh * 0.06f, cx + hw * 0.06f, cy + hh * 0.26f, 2.5f);
+        sr.rectLine(cx - hw * 0.06f, cy - hh * 0.26f, cx + hw * 0.32f, cy - hh * 0.06f, 2.5f);
     }
 
     private void fillDiamond(ShapeRenderer sr, float cx, float cy, Color c) {

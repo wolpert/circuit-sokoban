@@ -109,6 +109,17 @@ class LevelGeneratorTest {
     }
 
     @Test
+    void hardLevelsWithIceStaySolvable() {
+        GenParams p = GenParams.hard(); // iceTiles == 2
+        for (int seed = 0; seed < 10; seed++) {
+            Level level = generator.generate(seed, p);
+            Solver.Result check = new Solver(p.solverMaxStates()).solve(level.freshBoard());
+            assertTrue(check.solvable(), "iced hard seed " + seed + " must be solvable");
+            assertEquals(level.par(), check.moves(), "cached par must match, seed " + seed);
+        }
+    }
+
+    @Test
     void hardLevelGeneratesAndIsSolvable() {
         Level level = generator.generate(7L, GenParams.hard());
         Solver.Result check = new Solver().solve(level.freshBoard());

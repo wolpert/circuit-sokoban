@@ -78,6 +78,31 @@ class BoardTest {
     }
 
     @Test
+    void pushedPieceSlidesAcrossIceToSolidGround() {
+        Board b = openBoard();
+        b.setPiece(new Pos(1, 0), new Piece(PieceType.ELBOW));
+        b.setIce(new Pos(2, 0), true);
+        b.setIce(new Pos(3, 0), true);
+        MoveResult r = b.stepPlayer(Direction.EAST);
+        assertEquals(MoveResult.Kind.PUSH, r.kind());
+        Board after = r.board();
+        assertNull(after.pieceAt(new Pos(2, 0)));
+        assertEquals(PieceType.ELBOW, after.pieceAt(new Pos(4, 0)).type(), "slides past ice to (4,0)");
+        assertEquals(new Pos(1, 0), after.player(), "player only moves one tile");
+    }
+
+    @Test
+    void slidingStopsAgainstAnObstacle() {
+        Board b = openBoard();
+        b.setPiece(new Pos(1, 0), new Piece(PieceType.ELBOW));
+        b.setIce(new Pos(2, 0), true);
+        b.setIce(new Pos(3, 0), true);
+        b.setWall(new Pos(4, 0), true);
+        MoveResult r = b.stepPlayer(Direction.EAST);
+        assertEquals(PieceType.ELBOW, r.board().pieceAt(new Pos(3, 0)).type(), "stops on the last ice before the wall");
+    }
+
+    @Test
     void reachabilityIsBlockedByPieces() {
         Board b = openBoard();
         // Wall off column x=2 across all rows so the player is boxed into x<2.

@@ -119,11 +119,12 @@ public final class Solver {
     private void addPushes(Board board, Set<Pos> reachable, Pos p, Piece piece, List<Board> out) {
         for (Direction d : Direction.values()) {
             Pos stand = p.step(d.opposite()); // player must stand behind the piece
-            Pos target = p.step(d);            // piece slides forward one cell
+            Pos target = p.step(d);            // piece moves forward one cell...
             if (reachable.contains(stand) && board.isStandable(target)) {
+                Pos dest = board.slideDestination(target, d); // ...and slides if it lands on ice
                 Board nb = board.copy();
                 nb.setPiece(p, null);
-                nb.setPiece(target, piece);
+                nb.setPiece(dest, piece);
                 nb.setPlayer(p); // after pushing, player ends on the piece's old cell
                 out.add(nb);
             }
