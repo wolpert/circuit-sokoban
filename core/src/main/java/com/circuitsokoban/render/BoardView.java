@@ -39,6 +39,7 @@ public final class BoardView {
     private static final float PUNCH_DUR = 0.30f;
     private static final float PUNCH_AMOUNT = 0.06f;
     private static final float PULSE_SPEED = 3.4f;
+    private static final float GATE_OPEN_DUR = 0.28f;
 
     // Mild overshoot-and-settle for movement and rotation.
     private static final Interpolation EASE = new Interpolation.SwingOut(1.3f);
@@ -77,6 +78,7 @@ public final class BoardView {
 
     private boolean solved;
     private boolean gatesUnlocked = true;
+    private float gateOpenElapsed = GATE_OPEN_DUR; // animates 0->DUR as gates swing open
     private Set<Pos> energized = new HashSet<>();
 
     private final List<Particle> particles = new ArrayList<>();
@@ -102,7 +104,7 @@ public final class BoardView {
         particles.clear();
         energized = new HashSet<>(circuit.energized());
         solved = circuit.solved();
-        gatesUnlocked = circuit.gatesUnlocked();
+        updateGates(circuit.gatesUnlocked(), false); // snap (load / undo / redo)
         receiverCell = board.receiver().pos();
     }
 
@@ -125,7 +127,7 @@ public final class BoardView {
 
         spawnJoinBursts(circuit.energized());
         energized = new HashSet<>(circuit.energized());
-        gatesUnlocked = circuit.gatesUnlocked();
+        updateGates(circuit.gatesUnlocked(), true); // animate the doors if they just opened
     }
 
     /** A shatter burst wherever a one-use fuse just burned out. */
@@ -148,7 +150,7 @@ public final class BoardView {
     /** Start the sequential energize sweep, the solve burst schedule, and the camera punch. */
     public void onSolved(Circuit.Result circuit) {
         solved = true;
-        gatesUnlocked = circuit.gatesUnlocked();
+        updateGates(circuit.gatesUnlocked(), true);
         energized = new HashSet<>(circuit.energized());
         waveLayers = circuit.layers();
         layerOf = new HashMap<>();
@@ -188,6 +190,9 @@ public final class BoardView {
         }
         if (punchElapsed < PUNCH_DUR) {
             punchElapsed += dt;
+        }
+        if (gateOpenElapsed < GATE_OPEN_DUR) {
+            gateOpenElapsed += dt;
         }
         updateWave(dt);
         updateParticles(dt);
@@ -276,6 +281,20 @@ public final class BoardView {
 
     public boolean gatesUnlocked() {
         return gatesUnlocked;
+    }
+
+    /** 0 = gate doors shut, 1 = fully retracted; eases so they swing open on unlock. */
+    public float gateOpenProgress() {
+        return Interpolation.pow2Out.apply(Math.min(gateOpenElapsed / GATE_OPEN_DUR, 1f));
+    }
+
+    private void updateGates(boolean nowUnlocked, boolean animate) {
+        if (animate && !gatesUnlocked && nowUnlocked) {
+            gateOpenElapsed = 0f; // start the doors-opening animation
+        } else if (!animate) {
+            gateOpenElapsed = GATE_OPEN_DUR; // snap (no animation on load/undo)
+        }
+        gatesUnlocked = nowUnlocked;
     }
 
     /** Camera zoom for the solve punch (dips in then settles back to 1). */

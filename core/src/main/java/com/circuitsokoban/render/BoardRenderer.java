@@ -142,7 +142,7 @@ public final class BoardRenderer {
                 if (piece.type() == PieceType.DIODE) {
                     drawDiodeArrow(sr, p, piece.flowDirection(), cx, cy);
                 } else if (piece.type() == PieceType.GATE) {
-                    drawGateBar(sr, p, piece, cx, cy, view.gatesUnlocked(), armWidth);
+                    drawGate(sr, p, piece, cx, cy, view.gatesUnlocked(), view.gateOpenProgress(), armWidth);
                 } else if (piece.type() == PieceType.FUSE) {
                     drawFuseGlyph(sr, cx, cy);
                 }
@@ -151,16 +151,29 @@ public final class BoardRenderer {
         sr.end();
     }
 
-    /** A coloured bar across the gate's axis: red while locked, green once the secondary opens it. */
-    private void drawGateBar(ShapeRenderer sr, Pos cell, Piece piece, float cx, float cy,
-                             boolean unlocked, float armWidth) {
-        Direction axis = firstOpening(piece);
-        Direction perp = axis.rotateCW();
+    /**
+     * The gate as a physical barrier so the state reads by <em>form</em>, not just
+     * colour: locked = a solid bar across the wire; open = the two halves retract to
+     * the tile edges (animated by {@code openProgress}) and the wire runs through.
+     */
+    private void drawGate(ShapeRenderer sr, Pos cell, Piece piece, float cx, float cy,
+                          boolean unlocked, float openProgress, float armWidth) {
+        Direction perp = firstOpening(piece).rotateCW(); // across the connector's axis
         armEndpoint(cell, perp, end);
         float vx = end.x - iso.worldX(cell.x(), cell.y());
         float vy = end.y - iso.worldY(cell.x(), cell.y());
-        sr.setColor(unlocked ? Palette.GATE_OPEN : Palette.GATE_LOCKED);
-        sr.rectLine(cx + vx * 0.85f, cy + vy * 0.85f, cx - vx * 0.85f, cy - vy * 0.85f, armWidth * 1.3f);
+        float bar = armWidth * 1.5f;
+
+        if (!unlocked) {
+            sr.setColor(Palette.GATE_LOCKED);
+            sr.rectLine(cx - vx * 0.95f, cy - vy * 0.95f, cx + vx * 0.95f, cy + vy * 0.95f, bar);
+            return;
+        }
+        // Open: each half slides from the centre (shut) out to the edge, clearing the path.
+        float inner = 0.6f * openProgress;
+        sr.setColor(Palette.GATE_OPEN);
+        sr.rectLine(cx + vx * inner, cy + vy * inner, cx + vx * 0.95f, cy + vy * 0.95f, bar);
+        sr.rectLine(cx - vx * inner, cy - vy * inner, cx - vx * 0.95f, cy - vy * 0.95f, bar);
     }
 
     /** A small bright "crack" (X) at the fuse's centre, signalling it's fragile / one-use. */
