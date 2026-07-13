@@ -18,6 +18,11 @@ import java.util.Set;
  * secondary source&rarr;receiver with GATE pieces treated as non-conductive; if
  * that circuit completes, gates are unlocked and conduct for the primary flood.
  * The level is solved when the <em>primary</em> source reaches its receiver.
+ *
+ * <p>Gates <b>latch</b>: {@link #resolve} sets {@code board.gateLatched} once the
+ * secondary completes, so gates stay open afterwards. {@code resolve} also burns
+ * out any energized FUSE piece (removes it) &mdash; a one-use fuse that latches a
+ * gate open then vanishes. {@link #evaluate} is pure; {@code resolve} mutates.
  */
 public final class Circuit {
 
@@ -27,31 +32,56 @@ public final class Circuit {
      * @param solved        true if the primary source reaches its receiver
      * @param energized     every piece cell lit by either circuit (for rendering)
      * @param layers        primary energized cells grouped by BFS distance (energize sweep)
-     * @param gatesUnlocked whether the secondary circuit is complete (gates conduct)
+     * @param gatesUnlocked  whether gates conduct (secondary complete, or latched)
+     * @param secondarySolved whether the secondary circuit is complete right now
      */
     public record Result(boolean solved, Set<Pos> energized, List<List<Pos>> layers,
-                         boolean gatesUnlocked) {}
+                         boolean gatesUnlocked, boolean secondarySolved) {}
 
     private record Flood(boolean solved, Set<Pos> energized, List<List<Pos>> layers) {}
 
     public static Result evaluate(Board board) {
-        boolean gatesUnlocked = true;
+        boolean secondarySolved = false;
         Set<Pos> secondaryEnergized = Set.of();
         if (board.hasSecondary()) {
             // Gates are locked while judging the secondary, so it can't depend on them.
             Flood secondary = flood(board, board.source2(), board.receiver2(), false);
-            gatesUnlocked = secondary.solved();
+            secondarySolved = secondary.solved();
             secondaryEnergized = secondary.energized();
         }
+        boolean gatesUnlocked = board.isGateLatched() || secondarySolved;
         Flood primary = flood(board, board.source(), board.receiver(), gatesUnlocked);
 
         Set<Pos> energized = new HashSet<>(primary.energized());
         energized.addAll(secondaryEnergized);
-        return new Result(primary.solved(), energized, primary.layers(), gatesUnlocked);
+        return new Result(primary.solved(), energized, primary.layers(), gatesUnlocked, secondarySolved);
     }
 
     public static boolean isSolved(Board board) {
         return evaluate(board).solved();
+    }
+
+    /**
+     * Applies the state changes a move can trigger and returns the settled result:
+     * latch gates open if the secondary is complete, and burn out (remove) any
+     * energized FUSE. <b>Mutates {@code board}.</b> Call after loading a board and
+     * after every move (game and solver alike) so state stays consistent.
+     */
+    public static Result resolve(Board board) {
+        Result r = evaluate(board);
+        boolean changed = false;
+        if (board.hasSecondary() && r.secondarySolved() && !board.isGateLatched()) {
+            board.setGateLatched(true);
+            changed = true;
+        }
+        for (Pos p : r.energized()) {
+            Piece piece = board.pieceAt(p);
+            if (piece != null && piece.type() == PieceType.FUSE) {
+                board.setPiece(p, null); // one-use: power flowed through, it's spent
+                changed = true;
+            }
+        }
+        return changed ? evaluate(board) : r;
     }
 
     /** Directed flood from {@code src} toward {@code rcv}; a locked gate conducts nothing. */

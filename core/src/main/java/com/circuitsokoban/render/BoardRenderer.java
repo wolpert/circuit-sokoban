@@ -107,7 +107,9 @@ public final class BoardRenderer {
                 float cx = iso.worldX(x, y) + off.x;
                 float cy = iso.worldY(x, y) + off.y;
 
-                if (view.isLit(p)) {
+                if (piece.type() == PieceType.FUSE) {
+                    wire.set(Palette.FUSE); // one-use fuse always reads warm, so it stands out
+                } else if (view.isLit(p)) {
                     float f = view.pulse();
                     wire.set(Palette.WIRE_ENERGIZED.r * f, Palette.WIRE_ENERGIZED.g * f,
                             Palette.WIRE_ENERGIZED.b * f, 1f);
@@ -141,6 +143,8 @@ public final class BoardRenderer {
                     drawDiodeArrow(sr, p, piece.flowDirection(), cx, cy);
                 } else if (piece.type() == PieceType.GATE) {
                     drawGateBar(sr, p, piece, cx, cy, view.gatesUnlocked(), armWidth);
+                } else if (piece.type() == PieceType.FUSE) {
+                    drawFuseGlyph(sr, cx, cy);
                 }
             }
         }
@@ -157,6 +161,14 @@ public final class BoardRenderer {
         float vy = end.y - iso.worldY(cell.x(), cell.y());
         sr.setColor(unlocked ? Palette.GATE_OPEN : Palette.GATE_LOCKED);
         sr.rectLine(cx + vx * 0.85f, cy + vy * 0.85f, cx - vx * 0.85f, cy - vy * 0.85f, armWidth * 1.3f);
+    }
+
+    /** A small bright "crack" (X) at the fuse's centre, signalling it's fragile / one-use. */
+    private void drawFuseGlyph(ShapeRenderer sr, float cx, float cy) {
+        float s = iso.halfH() * 0.28f;
+        sr.setColor(Palette.FUSE_GLYPH);
+        sr.rectLine(cx - s, cy - s * 0.6f, cx + s, cy + s * 0.6f, 2.5f);
+        sr.rectLine(cx - s, cy + s * 0.6f, cx + s, cy - s * 0.6f, 2.5f);
     }
 
     private static Direction firstOpening(Piece piece) {

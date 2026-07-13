@@ -17,7 +17,9 @@ package com.circuitsokoban.model;
  *
  * <p>GATE is a straight connector that only conducts while a separate secondary
  * circuit on the board is complete (see {@code Circuit}); otherwise it blocks the
- * path. ICE is not a piece &mdash; it's a board tile (see {@code Board.isIce}).
+ * path. FUSE is a straight connector that burns out (is removed) the instant it's
+ * energized &mdash; a one-use fuse for latching a gate open. ICE is not a piece
+ * &mdash; it's a board tile (see {@code Board.isIce}).
  */
 public enum PieceType {
     STRAIGHT(Direction.NORTH.bit() | Direction.SOUTH.bit(), 2),
@@ -26,7 +28,8 @@ public enum PieceType {
     CROSS(Direction.NORTH.bit() | Direction.EAST.bit()
             | Direction.SOUTH.bit() | Direction.WEST.bit(), 1),
     DIODE(Direction.NORTH.bit() | Direction.SOUTH.bit(), 4),
-    GATE(Direction.NORTH.bit() | Direction.SOUTH.bit(), 2);
+    GATE(Direction.NORTH.bit() | Direction.SOUTH.bit(), 2),
+    FUSE(Direction.NORTH.bit() | Direction.SOUTH.bit(), 2);
 
     /** The four basic (non-directional, always-present) connectors, for generation. */
     public static final PieceType[] BASIC = {STRAIGHT, ELBOW, TEE, CROSS};

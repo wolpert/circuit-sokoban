@@ -29,6 +29,7 @@ package com.circuitsokoban.solver;
  * @param diodesOnPath   collinear solution-path pieces to turn into one-way diodes
  * @param iceTiles       slide tiles placed on empty off-path cells
  * @param gateCount      locked gates on the primary path (each adds a secondary circuit)
+ * @param fragileSecondary make the secondary's key a one-use FUSE that latches the gate then burns
  * @param solverMaxStates state budget for the validating solver; exceeding it -> "too hard", reject
  * @param maxAttempts    how many generate-and-check tries before giving up
  */
@@ -43,6 +44,7 @@ public record GenParams(
         int diodesOnPath,
         int iceTiles,
         int gateCount,
+        boolean fragileSecondary,
         int solverMaxStates,
         int maxAttempts) {
 
@@ -50,16 +52,17 @@ public record GenParams(
     private static final int GEN_MAX_STATES = 120_000;
 
     public static GenParams easy() {
-        return new GenParams(5, 5, 6, 2, 4, 0.5, 0, 0, 0, 0, GEN_MAX_STATES, 400);
+        return new GenParams(5, 5, 6, 2, 4, 0.5, 0, 0, 0, 0, false, GEN_MAX_STATES, 400);
     }
 
     public static GenParams medium() {
-        return new GenParams(5, 5, 9, 4, 6, 0.5, 0, 1, 1, 0, GEN_MAX_STATES, 400);
+        return new GenParams(5, 5, 9, 4, 6, 0.5, 0, 1, 1, 0, false, GEN_MAX_STATES, 400);
     }
 
-    // Hard is the "gate" tier: a locked gate + secondary circuit, plus a diode.
-    // Ice/decoys are dropped here to keep the two-circuit par within the fast envelope.
+    // Hard is the "gate" tier: a locked gate whose secondary key is a one-use FUSE
+    // (latch the gate open, the fuse burns), plus a diode. Ice/decoys dropped to keep
+    // the two-circuit par within the fast envelope.
     public static GenParams hard() {
-        return new GenParams(5, 5, 11, 6, 9, 0.45, 0, 1, 0, 1, GEN_MAX_STATES, 400);
+        return new GenParams(5, 5, 11, 6, 9, 0.45, 0, 1, 0, 1, true, GEN_MAX_STATES, 400);
     }
 }

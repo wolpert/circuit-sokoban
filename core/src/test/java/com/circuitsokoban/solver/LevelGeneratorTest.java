@@ -111,7 +111,7 @@ class LevelGeneratorTest {
     @Test
     void iceLevelsStaySolvable() {
         // Ice-focused params: 3 slide tiles, no diode/gate.
-        GenParams p = new GenParams(5, 5, 10, 4, 8, 0.5, 0, 0, 3, 0, 120_000, 400);
+        GenParams p = new GenParams(5, 5, 10, 4, 8, 0.5, 0, 0, 3, 0, false, 120_000, 400);
         for (int seed = 0; seed < 10; seed++) {
             Level level = generator.generate(seed, p);
             Solver.Result check = new Solver(p.solverMaxStates()).solve(level.freshBoard());
@@ -139,6 +139,28 @@ class LevelGeneratorTest {
             assertTrue(gate, "gate seed " + seed + " must contain a gate");
             Solver.Result check = new Solver(p.solverMaxStates()).solve(b);
             assertTrue(check.solvable(), "gate seed " + seed + " must be solvable");
+            assertEquals(level.par(), check.moves(), "cached par must match, seed " + seed);
+        }
+    }
+
+    @Test
+    void hardLevelsHaveAFuseSecondaryAndStaySolvable() {
+        GenParams p = GenParams.hard(); // fragileSecondary == true
+        for (int seed = 0; seed < 12; seed++) {
+            Level level = generator.generate(seed, p);
+            Board b = level.freshBoard();
+            boolean fuse = false;
+            for (int y = 0; y < b.height(); y++) {
+                for (int x = 0; x < b.width(); x++) {
+                    Piece pc = b.pieceAt(new Pos(x, y));
+                    if (pc != null && pc.type() == com.circuitsokoban.model.PieceType.FUSE) {
+                        fuse = true;
+                    }
+                }
+            }
+            assertTrue(fuse, "hard seed " + seed + " must contain a fuse");
+            Solver.Result check = new Solver(p.solverMaxStates()).solve(b);
+            assertTrue(check.solvable(), "fuse seed " + seed + " must be solvable");
             assertEquals(level.par(), check.moves(), "cached par must match, seed " + seed);
         }
     }

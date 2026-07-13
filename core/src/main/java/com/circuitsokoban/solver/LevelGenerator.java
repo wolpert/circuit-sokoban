@@ -54,6 +54,13 @@ public final class LevelGenerator {
             Board scrambled = solved.copy();
             scramble(scrambled, rng, params);
 
+            // Don't hand the player a start whose secondary is already complete: on
+            // load it would immediately latch the gate (and burn the fuse), skipping
+            // the whole mechanic. Reject and retry.
+            if (scrambled.hasSecondary() && Circuit.evaluate(scrambled).secondarySolved()) {
+                continue;
+            }
+
             // Depth-bound the search at maxPar: anything deeper is a level we'd
             // reject anyway, and bounding keeps rejecting "too hard" scrambles cheap.
             Solver.Result result =
@@ -98,7 +105,8 @@ public final class LevelGenerator {
         Board board = new Board(w, h, source, receiver, startCell /* placeholder */);
         placePathPieces(board, path, source, receiver);
         placeDiodes(board, path, source, receiver, rng, p.diodesOnPath());
-        if (p.gateCount() > 0 && !placeGateAndSecondary(board, path, source, receiver, rng)) {
+        if (p.gateCount() > 0
+                && !placeGateAndSecondary(board, path, source, receiver, rng, p.fragileSecondary())) {
             return null; // couldn't fit a gate + secondary this attempt; caller retries
         }
         addDecoys(board, rng, p.extraPieces());
@@ -227,8 +235,8 @@ public final class LevelGenerator {
      * complete and the gate conducts; scrambling then rotates the key, so the player
      * must complete circuit B to unlock gate A. Returns false if it can't fit.
      */
-    private boolean placeGateAndSecondary(Board board, List<Pos> path,
-                                          Terminal source, Terminal receiver, Random rng) {
+    private boolean placeGateAndSecondary(Board board, List<Pos> path, Terminal source,
+                                          Terminal receiver, Random rng, boolean fragile) {
         List<Integer> candidates = new ArrayList<>();
         for (int i = 0; i < path.size(); i++) {
             Direction toPrev = (i == 0)
@@ -256,7 +264,10 @@ public final class LevelGenerator {
         Pos mid = a.step(d);
         Pos c = a.step(d, 2);
         board.setSecondary(new Terminal(a, d), new Terminal(c, d.opposite()));
-        board.setPiece(mid, pieceMatching(d.bit() | d.opposite().bit())); // aligned key straight
+        // The key is aligned (spans the axis) in the solved template. A fuse is a
+        // one-use variant that burns out once the secondary first completes.
+        PieceType keyType = fragile ? PieceType.FUSE : PieceType.STRAIGHT;
+        board.setPiece(mid, new Piece(keyType, d.dx != 0 ? 1 : 0));
         return true;
     }
 

@@ -28,6 +28,7 @@ public final class Board {
     private final Terminal receiver;
     private Terminal source2;          // optional secondary circuit that unlocks gates
     private Terminal receiver2;
+    private boolean gateLatched;       // secondary completed at least once -> gates stay open
     private Pos player;
 
     public Board(int width, int height, Terminal source, Terminal receiver, Pos player) {
@@ -54,6 +55,7 @@ public final class Board {
         this.receiver = other.receiver;
         this.source2 = other.source2;
         this.receiver2 = other.receiver2;
+        this.gateLatched = other.gateLatched;
         this.player = other.player;
     }
 
@@ -95,6 +97,8 @@ public final class Board {
     public Terminal source2() { return source2; }
     public Terminal receiver2() { return receiver2; }
     public boolean hasSecondary() { return source2 != null && receiver2 != null; }
+    public boolean isGateLatched() { return gateLatched; }
+    public void setGateLatched(boolean latched) { this.gateLatched = latched; }
 
     public boolean inBounds(Pos p) {
         return p.x() >= 0 && p.x() < width && p.y() >= 0 && p.y() < height;

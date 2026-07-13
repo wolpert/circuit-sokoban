@@ -29,6 +29,10 @@ public final class Palette {
     public static final Color GATE_LOCKED = new Color(0xe05c6aff);
     public static final Color GATE_OPEN = new Color(0x7cf6b0ff);
 
+    // Fuse: a one-use connector; warm coral wire with a bright "crack" marker.
+    public static final Color FUSE = new Color(0xff7a4dff);
+    public static final Color FUSE_GLYPH = new Color(0xffd7b0ff);
+
     // Connectors.
     public static final Color WIRE_IDLE = new Color(0x8792a8ff);      // aligned but not powered
     public static final Color WIRE_ENERGIZED = new Color(0x7CF6b0ff); // carrying power

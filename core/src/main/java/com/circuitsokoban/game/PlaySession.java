@@ -4,10 +4,14 @@ import com.circuitsokoban.model.Board;
 import com.circuitsokoban.model.Circuit;
 import com.circuitsokoban.model.Direction;
 import com.circuitsokoban.model.MoveResult;
+import com.circuitsokoban.model.Piece;
+import com.circuitsokoban.model.PieceType;
 import com.circuitsokoban.model.Pos;
 import com.circuitsokoban.solver.Level;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 /**
  * Mutable per-play state for one level: the live board, the move counter,
@@ -30,6 +34,7 @@ public final class PlaySession {
     private int moves;
     private Circuit.Result circuit;
     private boolean solved;
+    private List<Pos> lastBurned = List.of(); // fuses that burned out on the last move
 
     private final Deque<Snapshot> undoStack = new ArrayDeque<>();
     private final Deque<Snapshot> redoStack = new ArrayDeque<>();
@@ -89,8 +94,35 @@ public final class PlaySession {
     }
 
     private void recompute() {
-        circuit = Circuit.evaluate(board);
+        List<Pos> fusesBefore = fuseCells();
+        circuit = Circuit.resolve(board); // settle latch + burn energized fuses
         solved = circuit.solved();
+        lastBurned = removed(fusesBefore, fuseCells());
+    }
+
+    /** Fuse cells that disappeared during the last recompute (for the shatter effect). */
+    public List<Pos> lastBurned() {
+        return lastBurned;
+    }
+
+    private List<Pos> fuseCells() {
+        List<Pos> out = new ArrayList<>();
+        for (int y = 0; y < board.height(); y++) {
+            for (int x = 0; x < board.width(); x++) {
+                Pos p = new Pos(x, y);
+                Piece piece = board.pieceAt(p);
+                if (piece != null && piece.type() == PieceType.FUSE) {
+                    out.add(p);
+                }
+            }
+        }
+        return out;
+    }
+
+    private static List<Pos> removed(List<Pos> before, List<Pos> after) {
+        List<Pos> gone = new ArrayList<>(before);
+        gone.removeAll(after);
+        return gone;
     }
 
     public Level level() { return level; }

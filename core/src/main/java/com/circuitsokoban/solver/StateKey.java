@@ -29,12 +29,14 @@ public final class StateKey {
 
     private final int[] masks;      // opening mask per cell (row-major), 0 if empty
     private final int playerIndex;  // canonical (minimum) reachable cell index
+    private final boolean latched;  // gates latched open (part of the state)
     private final int hash;
 
-    private StateKey(int[] masks, int playerIndex) {
+    private StateKey(int[] masks, int playerIndex, boolean latched) {
         this.masks = masks;
         this.playerIndex = playerIndex;
-        this.hash = 31 * Arrays.hashCode(masks) + playerIndex;
+        this.latched = latched;
+        this.hash = 31 * (31 * Arrays.hashCode(masks) + playerIndex) + (latched ? 1 : 0);
     }
 
     public static StateKey of(Board board) {
@@ -54,6 +56,8 @@ public final class StateKey {
                     int code = (p.outputs() << 4) | p.inputs();
                     if (p.type() == com.circuitsokoban.model.PieceType.GATE) {
                         code |= 1 << 8;
+                    } else if (p.type() == com.circuitsokoban.model.PieceType.FUSE) {
+                        code |= 1 << 9; // distinct from a same-shaped straight (it burns)
                     }
                     masks[y * w + x] = code;
                 }
@@ -64,14 +68,15 @@ public final class StateKey {
         for (Pos p : reachable) {
             canonical = Math.min(canonical, p.y() * w + p.x());
         }
-        return new StateKey(masks, canonical);
+        return new StateKey(masks, canonical, board.isGateLatched());
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof StateKey other)) return false;
-        return playerIndex == other.playerIndex && Arrays.equals(masks, other.masks);
+        return playerIndex == other.playerIndex && latched == other.latched
+                && Arrays.equals(masks, other.masks);
     }
 
     @Override

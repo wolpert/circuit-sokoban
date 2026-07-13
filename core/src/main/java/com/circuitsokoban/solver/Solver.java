@@ -64,14 +64,16 @@ public final class Solver {
     }
 
     public Result solve(Board start) {
-        if (Circuit.isSolved(start)) {
-            return new Result(true, 0, List.of(start));
+        Board root = start.copy();
+        Circuit.resolve(root); // settle latch/fuse state before searching
+        if (Circuit.isSolved(root)) {
+            return new Result(true, 0, List.of(root));
         }
 
         Set<StateKey> visited = new HashSet<>();
         ArrayDeque<Node> queue = new ArrayDeque<>();
-        visited.add(StateKey.of(start));
-        queue.add(new Node(start, 0, null));
+        visited.add(StateKey.of(root));
+        queue.add(new Node(root, 0, null));
 
         int expanded = 0;
         while (!queue.isEmpty() && expanded < maxStates) {
@@ -126,6 +128,7 @@ public final class Solver {
                 nb.setPiece(p, null);
                 nb.setPiece(dest, piece);
                 nb.setPlayer(p); // after pushing, player ends on the piece's old cell
+                Circuit.resolve(nb); // latch gates / burn fuses triggered by this move
                 out.add(nb);
             }
         }
@@ -141,6 +144,7 @@ public final class Solver {
                 Board nb = board.copy();
                 nb.setPiece(p, piece.rotatedCW());
                 nb.setPlayer(adj);
+                Circuit.resolve(nb); // latch gates / burn fuses triggered by this move
                 out.add(nb);
                 return; // any adjacent standing cell yields the same normalized state
             }

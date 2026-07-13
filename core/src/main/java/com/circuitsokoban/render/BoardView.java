@@ -128,6 +128,14 @@ public final class BoardView {
         gatesUnlocked = circuit.gatesUnlocked();
     }
 
+    /** A shatter burst wherever a one-use fuse just burned out. */
+    public void onFuseBurn(List<Pos> cells) {
+        for (Pos p : cells) {
+            spawnBurst(iso.worldX(p.x(), p.y()), iso.worldY(p.x(), p.y()),
+                    20, 130f, Palette.FUSE, true);
+        }
+    }
+
     public void onInvalidPush(Pos pieceCell, Direction dir) {
         bumpCell = pieceCell;
         float cx = iso.worldX(pieceCell.x(), pieceCell.y());

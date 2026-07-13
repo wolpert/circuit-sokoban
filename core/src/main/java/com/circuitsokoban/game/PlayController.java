@@ -5,6 +5,7 @@ import com.circuitsokoban.model.Direction;
 import com.circuitsokoban.model.MoveResult;
 import com.circuitsokoban.model.Pos;
 import com.circuitsokoban.render.BoardView;
+import java.util.List;
 
 /**
  * Coordinates the authoritative logic ({@link PlaySession}) with the visual
@@ -71,6 +72,10 @@ public final class PlayController {
 
     private void animate(MoveResult r, boolean solvedBefore) {
         view.onMove(r, session.circuit());
+        List<Pos> burned = session.lastBurned();
+        if (!burned.isEmpty()) {
+            view.onFuseBurn(burned); // shatter where a fuse was consumed
+        }
         if (session.isSolved() && !solvedBefore) {
             view.onSolved(session.circuit());
         }
