@@ -254,6 +254,21 @@ public final class BoardView {
         return out;
     }
 
+    /** The cell of the currently sliding piece, or null. */
+    public Pos slidingCell() {
+        return slideTo;
+    }
+
+    /** Vector from the slide's destination back to its origin (length = slide distance). */
+    public Vector2 slideBack(Vector2 out) {
+        return out.set(slideDelta);
+    }
+
+    /** 0 at the start of the slide, 1 when settled. */
+    public float slideProgress() {
+        return Math.min(slideElapsed / MOVE_DUR, 1f);
+    }
+
     /** Rotation progress 0..~1 for the rotating piece at {@code cell}, or -1 if not rotating. */
     public float rotationProgress(Pos cell) {
         if (!cell.equals(rotCell)) {

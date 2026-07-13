@@ -16,8 +16,10 @@ public final class Palette {
     public static final Color TILE_LIGHT = new Color(0x2a3142ff);
     public static final Color TILE_DARK = new Color(0x232a39ff);
     public static final Color TILE_BORDER = new Color(0x3a465bff);
-    public static final Color ICE = new Color(0x5f8aa6ff);      // slick blue-grey slide tile
-    public static final Color ICE_SHEEN = new Color(0x9fc4d8ff);
+    // Desaturated steel-blue so it reads as a frosted floor, not the vivid cyan
+    // receiver terminal; the bright frost crystal on top is the real "ice" cue.
+    public static final Color ICE = new Color(0x566d7dff);
+    public static final Color ICE_SHEEN = new Color(0xc3dae6ff);
 
     // Terminals.
     public static final Color SOURCE = new Color(0xffb24dff);   // warm

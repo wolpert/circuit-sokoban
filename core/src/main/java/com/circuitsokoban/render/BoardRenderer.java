@@ -25,6 +25,7 @@ public final class BoardRenderer {
     private final IsoProjector iso;
     private final Vector2 off = new Vector2();
     private final Vector2 end = new Vector2();
+    private final Vector2 slideVec = new Vector2();
     private final Color wire = new Color();
 
     public BoardRenderer(IsoProjector iso) {
@@ -135,6 +136,9 @@ public final class BoardRenderer {
                         armEndpoint(p, d, end);
                         sr.rectLine(cx, cy, end.x + off.x, end.y + off.y, armWidth);
                     }
+                }
+                if (p.equals(view.slidingCell())) {
+                    drawSlideTrail(sr, view, cx, cy, jointR);
                 }
                 sr.setColor(Palette.JOINT);
                 sr.circle(cx, cy, jointR, 20);
@@ -259,13 +263,42 @@ public final class BoardRenderer {
         out.set((cx + nx) / 2f, (cy + ny) / 2f);
     }
 
-    /** Two faint parallel streaks to read the tile as slippery. */
+    /**
+     * A faint fading afterimage behind a sliding piece. Scaled by slide distance,
+     * so a long ice slide leaves a strong trail while a 1-tile push barely shows one.
+     */
+    private void drawSlideTrail(ShapeRenderer sr, BoardView view, float cx, float cy, float jointR) {
+        view.slideBack(slideVec); // destination -> origin, length == slide distance
+        float len = slideVec.len();
+        if (len < 1f) {
+            return;
+        }
+        slideVec.scl(1f / len);
+        float distFactor = Math.min(len / (iso.halfW() * 2.2f), 1f);
+        float fade = (1f - view.slideProgress()) * distFactor;
+        if (fade <= 0.02f) {
+            return;
+        }
+        float spacing = iso.halfW() * 0.42f;
+        for (int i = 1; i <= 3; i++) {
+            float a = fade * (0.32f - 0.08f * i);
+            if (a <= 0f) {
+                continue;
+            }
+            sr.setColor(wire.r, wire.g, wire.b, a);
+            sr.circle(cx + slideVec.x * spacing * i, cy + slideVec.y * spacing * i,
+                    jointR * (1f - 0.18f * i), 14);
+        }
+    }
+
+    /** A small frost crystal (three crossing spokes) so the tile reads as ice. */
     private void drawIceSheen(ShapeRenderer sr, float cx, float cy) {
-        float hw = iso.halfW();
-        float hh = iso.halfH();
+        float rw = iso.halfW() * 0.3f;
+        float rh = iso.halfH() * 0.3f;
         sr.setColor(Palette.ICE_SHEEN);
-        sr.rectLine(cx - hw * 0.32f, cy + hh * 0.06f, cx + hw * 0.06f, cy + hh * 0.26f, 2.5f);
-        sr.rectLine(cx - hw * 0.06f, cy - hh * 0.26f, cx + hw * 0.32f, cy - hh * 0.06f, 2.5f);
+        sr.rectLine(cx - rw, cy, cx + rw, cy, 2.2f);                 // horizontal-ish spoke
+        sr.rectLine(cx - rw * 0.5f, cy + rh, cx + rw * 0.5f, cy - rh, 2.2f);
+        sr.rectLine(cx + rw * 0.5f, cy + rh, cx - rw * 0.5f, cy - rh, 2.2f);
     }
 
     private void fillDiamond(ShapeRenderer sr, float cx, float cy, Color c) {
