@@ -8,6 +8,12 @@ java {
     }
 }
 
+// Compile to Java 17 bytecode so the Android module's D8 dexer accepts core
+// classes (the code uses no Java 18+ features). Desktop JVM 21 runs it fine.
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+}
+
 dependencies {
     // libGDX is used by the render/input/screen packages. The model/ and solver/
     // packages deliberately avoid importing it so they stay pure-Java testable.

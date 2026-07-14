@@ -1,0 +1,63 @@
+plugins {
+    id 'com.android.application' version '8.11.1'
+}
+
+android {
+    namespace 'com.circuitsokoban.android'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.circuitsokoban'
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs = ['../assets']   // shared assets (empty: art is procedural)
+            jniLibs.srcDirs = ['libs']       // libGDX native .so files, populated below
+        }
+    }
+}
+
+configurations { natives }
+
+dependencies {
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-android:$gdxVersion"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-armeabi-v7a"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-arm64-v8a"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86"
+    natives "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-x86_64"
+}
+
+// Extract libGDX's per-ABI native .so files into libs/<abi> so they get packaged.
+tasks.register('copyAndroidNatives') {
+    doFirst {
+        configurations.natives.copy().files.each { jar ->
+            String abi = null
+            if (jar.name.endsWith('natives-armeabi-v7a.jar')) abi = 'armeabi-v7a'
+            if (jar.name.endsWith('natives-arm64-v8a.jar')) abi = 'arm64-v8a'
+            if (jar.name.endsWith('natives-x86.jar')) abi = 'x86'
+            if (jar.name.endsWith('natives-x86_64.jar')) abi = 'x86_64'
+            if (abi != null) {
+                copy {
+                    from zipTree(jar)
+                    into file("libs/$abi")
+                    include '*.so'
+                }
+            }
+        }
+    }
+}
+
+project.afterEvaluate {
+    tasks.named('preBuild').configure { dependsOn 'copyAndroidNatives' }
+}

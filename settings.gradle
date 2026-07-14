@@ -1,6 +1,13 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'circuit-sokoban'
 
 include 'core'
 include 'lwjgl3'
-// 'android' module is added later, once we test on-device — it pins AGP/Gradle
-// versions that we don't want constraining the desktop + logic build yet.
+include 'android'

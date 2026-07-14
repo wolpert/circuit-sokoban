@@ -16,3 +16,7 @@ out/
 
 # libGDX / desktop
 saves/
+
+# Android
+local.properties
+android/libs/
