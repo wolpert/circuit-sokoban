@@ -72,6 +72,20 @@ system-wide Gradle — see [CLAUDE.md](CLAUDE.md)).
 The app starts at the level-select menu; pick a tier and solve. Progress (best
 moves, medals, current level per tier) persists between runs.
 
+### Android
+
+The same code runs on Android (portrait). You need the Android SDK; point the
+build at it with a `local.properties` file containing `sdk.dir=/path/to/Android/Sdk`.
+
+```bash
+./gradlew :android:assembleDebug          # build a debug APK
+# APK at android/build/outputs/apk/debug/android-debug.apk
+
+# install + launch on a connected device/emulator
+adb install -r android/build/outputs/apk/debug/android-debug.apk
+adb shell am start -n com.circuitsokoban/com.circuitsokoban.android.AndroidLauncher
+```
+
 ### Controls
 
 | Action        | Desktop                          | Touch                       |
@@ -94,8 +108,9 @@ instant.
 
 ## Project structure
 
-Two Gradle modules. The `model`, `solver`, and most of `game` packages are
-**pure Java (no libGDX)** and fully unit-tested; rendering/input sit on top.
+Three Gradle modules. The `model`, `solver`, and most of `game` packages are
+**pure Java (no libGDX)** and fully unit-tested; rendering/input sit on top, and
+the two launchers are thin.
 
 ```
 core/                         # shared game module
@@ -104,27 +119,29 @@ core/                         # shared game module
     solver/    Solver (BFS), StateKey, LevelGenerator (reverse-gen), GenParams, Level
     game/      PlaySession, PlayController, Progress, Tier, Navigator, Lesson, Tutorials, Store
     render/    IsoProjector, BoardRenderer, BoardView (juice), Palette, Particle, TutorialOverlay
-    screen/    MenuScreen, GameScreen
+    screen/    MenuScreen, GameScreen, LegendScreen
     input/     GameInput  (one InputProcessor for desktop + touch)
     CircuitSokobanGame.java  (Game entry / navigator)
 lwjgl3/                       # desktop launcher (portrait 540×960)
+android/                      # Android launcher (portrait, libGDX Android backend)
 assets/                       # runtime working dir (procedural art — no texture assets)
 ```
 
 ## Tech
 
-- **libGDX 1.14.2**, LWJGL3 desktop backend
-- **Java 21**, **Gradle 8.13** (via the wrapper)
+- **libGDX 1.14.2**, LWJGL3 desktop + Android backends
+- **Java 21** (core compiled to Java 17 bytecode for Android's dexer),
+  **Gradle 8.13** (via the wrapper), **AGP 8.11.1**
 - Art is drawn procedurally with `ShapeRenderer` (flat geometric shapes) — no
   sprite assets to manage.
 
 ## Status
 
-Playable end to end: generation, solver, isometric rendering, input, the juice
-layer, endless-by-tier level select with persistent medals, all four advanced
-piece types (diode / gate / ice / one-use fuse), and text-free tutorials.
+Playable end to end on **desktop and Android**: generation, solver, isometric
+rendering, input, the juice layer, endless-by-tier level select with persistent
+medals, all four advanced piece types (diode / gate / ice / one-use fuse), and
+text-free tutorials.
 
-Not yet built: the **Android launcher module** (desktop-first; the Android SDK
-side is wired but the module is intentionally deferred) and a **hint** system.
-The HUD still uses a few English words (only the tutorial is deliberately
-text-free).
+Not yet built: a **hint** system. The HUD still uses a few English words (only
+the tutorial is deliberately text-free), and the fixed 9:16 world letterboxes on
+taller phones (fine, but a candidate for a follow-up layout tweak).

@@ -13,7 +13,16 @@ Always use the **wrapper** (`./gradlew`), never a system Gradle.
 ./gradlew :core:test --tests 'com.circuitsokoban.solver.SolverTest'   # one class
 ./gradlew :lwjgl3:run           # play on desktop (portrait window)
 ./gradlew :lwjgl3:run --args="--difficulty hard --seed 4"
+./gradlew :android:assembleDebug   # build the Android debug APK
 ```
+
+Android needs the SDK path in `local.properties` (`sdk.dir=...`, gitignored) —
+it's set for this machine. The build (`copyAndroidNatives`) extracts libGDX's
+per-ABI `.so` into `android/libs/` (gitignored). To run on an emulator/device:
+`adb install -r android/build/outputs/apk/debug/android-debug.apk` then
+`adb shell am start -n com.circuitsokoban/com.circuitsokoban.android.AndroidLauncher`.
+The SDK has AVDs (`~/Android/Sdk/emulator/emulator -list-avds`); boot one headless
+with `-no-window -gpu swiftshader_indirect`, then `adb`.
 
 ### Headless visual verification
 
@@ -44,8 +53,9 @@ xvfb-run -a -s "-screen 0 540x960x24" ./gradlew :lwjgl3:run --args="--legend $(p
 
 ## Architecture
 
-Two Gradle modules: `core` (all game code) and `lwjgl3` (desktop launcher). The
-**android module is intentionally NOT in `settings.gradle`** yet.
+Three Gradle modules: `core` (all game code), `lwjgl3` (desktop launcher), and
+`android` (Android launcher). Both launchers are thin — they just hand the shared
+`CircuitSokobanGame` to their platform backend.
 
 The critical rule is the dependency boundary:
 
@@ -69,10 +79,14 @@ The logical grid is **orthogonal**; isometric is purely a render transform
 
 ## Key facts & gotchas
 
-- **Gradle:** wrapper pinned to **8.13**; the user's system Gradle is 9.x, which
-  is incompatible with the (future) Android Gradle Plugin. Build with `./gradlew`.
-- **Android SDK** is installed at `~/Android/Sdk` (platforms to android-37). When
-  wiring the android module, that's the AGP/Gradle-version-sensitive part.
+- **Gradle / AGP pairing:** wrapper pinned to **8.13** (the user's system Gradle
+  is 9.x); the android module uses **AGP 8.11.1**, whose min Gradle is exactly
+  8.13. Bumping one likely means bumping the other. Build with `./gradlew`.
+- **core targets Java 17 bytecode** (`options.release = 17`) even though it builds
+  on JDK 21, so Android's D8 can dex it. Don't use Java 18+ language features in
+  `core`, or the Android build breaks. Desktop JVM 21 runs the 17 bytecode fine.
+- **Android SDK** at `~/Android/Sdk` (platforms to android-37); path is in the
+  gitignored `local.properties`. compileSdk 36 / targetSdk 34 / minSdk 21.
 - **Solver perf envelope:** par comes from an *optimal* BFS whose cost explodes
   with board size and solution depth. It's only fast on **5×5, par ≤ 8–9**. Do
   NOT raise `GenParams` board size or `maxPar` without first making the solver
